@@ -7,7 +7,7 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = "vitalmap-secret-key"
 
-DATA_FILE = "/static/data/births-and-deaths-projected-to-2100.csv"
+DATA_FILE = "static/data/births-and-deaths-projected-to-2100.csv"
 SUBMISSION_FILE = "submissions.messages.json"
 
 
@@ -19,7 +19,7 @@ def load_dataset():
         reader = csv.DictReader(file)
 
         for row in reader:
-            entity = row["Entiry"]
+            entity = row["Entity"]
             code = row["Code"]
             year = int(row ["Year"])
 
@@ -47,8 +47,7 @@ def load_dataset():
                 "natural_growth": births - deaths
             })
 
-            print(rows)
     return rows
 
-
-
+dataset = load_dataset()
+print(dataset)
