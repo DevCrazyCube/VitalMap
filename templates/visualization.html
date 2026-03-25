@@ -10,49 +10,52 @@
 
 <div class="viz-page">
 
-  <!-- Page header -->
+  <!-- Slim page header -->
   <div class="viz-header">
     <div class="viz-header__inner">
       <div>
         <h1 class="viz-header__title">World Population Map</h1>
-        <p class="viz-header__sub">
-          Select a year and metric · Hover countries for details · Click to see the trend
-        </p>
+        <p class="viz-header__sub">Scroll to zoom · Drag to pan · Click a country for detail</p>
       </div>
       <div class="viz-header__year-badge">
-        <span class="viz-header__year-label">Viewing year</span>
+        <span class="viz-header__year-label">Year</span>
         <span class="viz-header__year-value" id="header-year">2000</span>
       </div>
     </div>
   </div>
 
-  <!-- Main layout: sidebar + map area -->
-  <div class="viz-layout">
+  <!-- Full-screen map stage -->
+  <div class="viz-stage" id="viz-stage">
 
-    <!-- ---- SIDEBAR / CONTROLS ---- -->
-    <aside class="viz-sidebar">
+    <!-- D3 renders the SVG map here -->
+    <div class="map-container" id="map-container">
+      <div class="map-loading" id="map-loading">
+        <div class="spinner"></div>
+        <span>Loading map…</span>
+      </div>
+    </div>
 
-      <!-- Year control -->
+    <!-- ── FLOATING: Controls (top-left) ── -->
+    <div class="float-card float-controls" id="controls-card">
+      <div class="float-card__header">
+        <span class="float-card__title">Controls</span>
+      </div>
+
       <div class="control-group">
         <label class="control-label" for="year-slider">
-          Year
-          <span class="control-value" id="year-display">2000</span>
+          Year <span class="control-value" id="year-display">2000</span>
         </label>
         <input
           class="year-slider"
           type="range"
           id="year-slider"
-          min="1950"
-          max="2100"
-          step="1"
-          value="2000"
+          min="1950" max="2100" step="1" value="2000"
         />
         <div class="year-slider__endpoints">
           <span>1950</span><span>2100</span>
         </div>
       </div>
 
-      <!-- Metric control -->
       <div class="control-group">
         <label class="control-label" for="metric-select">Metric</label>
         <select class="control-select" id="metric-select">
@@ -65,97 +68,83 @@
         </p>
       </div>
 
-      <!-- Country search -->
       <div class="control-group">
-        <label class="control-label" for="country-search">Search country</label>
+        <label class="control-label" for="country-search">Search</label>
         <div class="search-wrap">
           <input
             class="control-input"
             type="text"
             id="country-search"
-            placeholder="e.g. Germany…"
+            placeholder="Country name…"
             autocomplete="off"
           />
-          <button class="search-clear" id="search-clear" title="Clear search">×</button>
+          <button class="search-clear" id="search-clear" title="Clear">×</button>
           <div class="search-suggestions" id="search-suggestions"></div>
         </div>
       </div>
 
-      <!-- Country details panel -->
-      <div class="details-panel" id="details-panel">
-        <div class="details-panel__empty" id="details-empty">
-          <div class="details-panel__empty-icon">🌍</div>
-          <p>Click any country on the map to see its data here.</p>
+      <button class="map-reset-btn" id="reset-view">Reset view</button>
+    </div>
+
+    <!-- ── FLOATING: Country details (top-right, hidden until click) ── -->
+    <div class="float-card float-details" id="details-card" style="display:none">
+      <div class="float-card__header">
+        <span class="details-panel__country-name" id="detail-country"></span>
+        <button class="float-close" id="details-close" title="Close">×</button>
+      </div>
+      <div class="details-panel__year-badge" id="detail-year-badge"></div>
+      <div class="details-rows">
+        <div class="details-row details-row--births">
+          <span class="details-row__label">Births</span>
+          <span class="details-row__value" id="detail-births">—</span>
         </div>
-        <div class="details-panel__content" id="details-content" style="display:none">
-          <div class="details-panel__country-name" id="detail-country"></div>
-          <div class="details-panel__year-badge" id="detail-year-badge"></div>
-          <div class="details-rows">
-            <div class="details-row details-row--births">
-              <span class="details-row__label">Births</span>
-              <span class="details-row__value" id="detail-births">—</span>
-            </div>
-            <div class="details-row details-row--deaths">
-              <span class="details-row__label">Deaths</span>
-              <span class="details-row__value" id="detail-deaths">—</span>
-            </div>
-            <div class="details-row details-row--growth">
-              <span class="details-row__label">Natural Growth</span>
-              <span class="details-row__value" id="detail-growth">—</span>
-            </div>
-          </div>
-          <div class="details-panel__growth-indicator" id="growth-indicator"></div>
+        <div class="details-row details-row--deaths">
+          <span class="details-row__label">Deaths</span>
+          <span class="details-row__value" id="detail-deaths">—</span>
+        </div>
+        <div class="details-row details-row--growth">
+          <span class="details-row__label">Growth</span>
+          <span class="details-row__value" id="detail-growth">—</span>
         </div>
       </div>
+      <div class="details-panel__growth-indicator" id="growth-indicator"></div>
+    </div>
 
-    </aside>
-
-    <!-- ---- MAP + CHART ---- -->
-    <div class="viz-main">
-
-      <!-- Choropleth map -->
-      <div class="map-container" id="map-container">
-        <div class="map-loading" id="map-loading">
-          <div class="spinner"></div>
-          <span>Loading map data…</span>
-        </div>
-        <!-- D3 renders the SVG here -->
-      </div>
-
-      <!-- Legend -->
-      <div class="map-legend" id="map-legend">
-        <span class="map-legend__label map-legend__label--low" id="legend-low"></span>
+    <!-- ── FLOATING: Legend (bottom-left) ── -->
+    <div class="float-card float-legend" id="legend-card">
+      <span class="map-legend__title" id="legend-title">Births</span>
+      <div class="map-legend__row">
+        <span class="map-legend__label" id="legend-low"></span>
         <div class="map-legend__gradient" id="legend-gradient"></div>
-        <span class="map-legend__label map-legend__label--high" id="legend-high"></span>
-        <span class="map-legend__title" id="legend-title"></span>
+        <span class="map-legend__label" id="legend-high"></span>
       </div>
+    </div>
 
-      <!-- Trend chart area -->
-      <div class="trend-section" id="trend-section">
-        <div class="trend-header">
-          <h3 class="trend-title" id="trend-title">Select a country to view its trend</h3>
-          <p class="trend-subtitle" id="trend-subtitle"></p>
-        </div>
-        <div class="trend-chart-wrap" id="trend-chart-wrap">
-          <div class="trend-empty" id="trend-empty">
-            <p>Click a country on the map to display its births and deaths trend from 1950 to 2100.</p>
-          </div>
-          <!-- D3 trend SVG goes here -->
-        </div>
-        <div class="trend-legend" id="trend-legend" style="display:none">
-          <span class="trend-legend__item trend-legend__item--births">― Births</span>
-          <span class="trend-legend__item trend-legend__item--deaths">― Deaths</span>
-          <span class="trend-legend__item trend-legend__item--growth">― Natural Growth</span>
-        </div>
+  </div><!-- /viz-stage -->
+
+  <!-- Trend panel (bottom strip, smaller) -->
+  <div class="trend-panel" id="trend-panel">
+    <div class="trend-panel__header">
+      <div>
+        <span class="trend-title" id="trend-title">Select a country to view its trend</span>
+        <span class="trend-subtitle" id="trend-subtitle"></span>
       </div>
-
-    </div><!-- /viz-main -->
-
-  </div><!-- /viz-layout -->
+      <div class="trend-legend" id="trend-legend" style="display:none">
+        <span class="trend-legend__item trend-legend__item--births">— Births</span>
+        <span class="trend-legend__item trend-legend__item--deaths">— Deaths</span>
+        <span class="trend-legend__item trend-legend__item--growth">— Growth</span>
+      </div>
+    </div>
+    <div class="trend-chart-wrap" id="trend-chart-wrap">
+      <div class="trend-empty" id="trend-empty">
+        <p>Click a country on the map to display its population trend (1950–2100).</p>
+      </div>
+    </div>
+  </div>
 
 </div><!-- /viz-page -->
 
-<!-- Tooltip (floats over map) -->
+<!-- Tooltip -->
 <div class="map-tooltip" id="map-tooltip" style="display:none">
   <div class="map-tooltip__name" id="tt-name"></div>
   <div class="map-tooltip__year" id="tt-year"></div>

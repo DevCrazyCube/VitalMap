@@ -397,6 +397,56 @@ ul, ol { list-style: none; }
   50%       { transform: scaleY(0.6); opacity: 0.4; }
 }
 
+/* Hero background world-map overlay (drawn by D3 in home.js) */
+#hero-map-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero__map-svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+/* Faint country outlines */
+.hero-country {
+  fill: none;
+  stroke: rgba(79, 195, 247, 0.18);
+  stroke-width: 0.5px;
+}
+
+/* Faint lat/lon grid */
+.hero-graticule {
+  fill: none;
+  stroke: rgba(79, 195, 247, 0.05);
+  stroke-width: 0.3px;
+}
+
+/* Pulsing outer ring at data-point locations */
+.hero-dot-ring {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 1px;
+  opacity: 0;
+  animation: heroPulse 3.2s ease-out infinite;
+}
+
+/* Solid inner dot */
+.hero-dot-core {
+  fill: var(--color-primary);
+  opacity: 0.45;
+}
+
+@keyframes heroPulse {
+  0%   { r: 3px;  opacity: 0.5; }
+  60%  { r: 10px; opacity: 0;   }
+  100% { r: 10px; opacity: 0;   }
+}
+
 
 /* ================================================================
    HOME — STORY SECTION
@@ -793,9 +843,21 @@ ul, ol { list-style: none; }
   padding: var(--space-5);
 }
 
-.contact-info__icon {
-  font-size: var(--text-xl);
-  line-height: 1;
+/* Replaced emoji icon with styled text badge */
+.contact-info__icon-mark {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(79, 195, 247, 0.1);
+  border: 1px solid rgba(79, 195, 247, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--color-primary);
+  letter-spacing: 0.05em;
 }
 
 .contact-info__item strong {
@@ -883,24 +945,12 @@ body.viz-body main {
   font-variant-numeric: tabular-nums;
 }
 
-/* --- Viz Layout --- */
-.viz-layout {
-  display: flex;
+/* --- Viz Stage: full-screen map area --- */
+.viz-stage {
+  position: relative;
   flex: 1;
   overflow: hidden;
-}
-
-/* --- Sidebar --- */
-.viz-sidebar {
-  width: var(--sidebar-w);
-  flex-shrink: 0;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
-  padding: var(--space-6);
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
+  min-height: 0;
 }
 
 /* --- Control Groups --- */
@@ -1047,106 +1097,16 @@ body.viz-body main {
 }
 
 
-/* --- Details Panel --- */
-.details-panel {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  min-height: 180px;
-}
 
-.details-panel__empty {
-  text-align: center;
-  padding: var(--space-6) var(--space-4);
-  color: var(--color-text-faint);
-}
-
-.details-panel__empty-icon {
-  font-size: var(--text-3xl);
-  margin-bottom: var(--space-3);
-}
-
-.details-panel__empty p {
-  font-size: var(--text-xs);
-  line-height: var(--leading-loose);
-}
-
-.details-panel__country-name {
-  font-size: var(--text-lg);
-  font-weight: var(--weight-bold);
-  margin-bottom: var(--space-1);
-}
-
-.details-panel__year-badge {
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-  margin-bottom: var(--space-4);
-}
-
-.details-rows { display: flex; flex-direction: column; gap: var(--space-2); }
-
-.details-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  background: var(--color-surface);
-}
-
-.details-row__label {
-  color: var(--color-text-muted);
-  font-weight: var(--weight-medium);
-}
-.details-row__value {
-  font-weight: var(--weight-semi);
-  font-variant-numeric: tabular-nums;
-}
-
-.details-row--births .details-row__value { color: var(--color-births); }
-.details-row--deaths .details-row__value { color: var(--color-deaths); }
-.details-row--growth .details-row__value { color: var(--color-growth); }
-
-.details-panel__growth-indicator {
-  margin-top: var(--space-3);
-  font-size: var(--text-xs);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  font-weight: var(--weight-medium);
-}
-
-.growth-positive {
-  background: rgba(102,187,106,0.12);
-  color: var(--color-growth);
-}
-.growth-negative {
-  background: rgba(239,83,80,0.12);
-  color: var(--color-deaths);
-}
-
-
-/* --- Viz Main --- */
-.viz-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: var(--space-4);
-  gap: var(--space-4);
-}
-
-/* --- Map Container --- */
+/* --- Map Container: fills the entire stage --- */
 .map-container {
-  flex: 1;
+  position: absolute;
+  inset: 0;
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  position: relative;
-  min-height: 360px;
   overflow: hidden;
+  cursor: grab;
 }
+.map-container:active { cursor: grabbing; }
 
 .map-container svg {
   width: 100%;
@@ -1216,16 +1176,112 @@ body.viz-body main {
 }
 
 
-/* --- Map Legend --- */
-.map-legend {
+/* ================================================================
+   FLOATING OVERLAY CARDS (viz page)
+   ================================================================ */
+
+/* Base card — all float-cards share this */
+.float-card {
+  position: absolute;
+  background: rgba(22, 27, 34, 0.90);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(48, 54, 61, 0.75);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  z-index: 10;
+}
+
+/* Card header row */
+.float-card__header {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-surface);
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.float-card__title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semi);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Close button on details card */
+.float-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-faint);
+  font-size: var(--text-lg);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 var(--space-1);
+  transition: color var(--t-fast);
+}
+.float-close:hover { color: var(--color-text); }
+
+/* Controls card — top-left */
+.float-controls {
+  top: 16px;
+  left: 16px;
+  width: 240px;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Details card — top-right */
+.float-details {
+  top: 16px;
+  right: 16px;
+  width: 220px;
+  padding: var(--space-5);
+}
+
+/* Legend card — bottom-left */
+.float-legend {
+  bottom: 16px;
+  left: 16px;
+  padding: var(--space-3) var(--space-4);
+  width: 240px;
+}
+
+/* Reset-view button — sits inside float-controls */
+.map-reset-btn {
+  background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  margin: 0 var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-family: var(--font-sans);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast);
+  width: 100%;
+  text-align: center;
+}
+.map-reset-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Legend internals */
+.map-legend__title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semi);
+  color: var(--color-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+  display: block;
+}
+
+.map-legend__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .map-legend__label {
@@ -1233,21 +1289,14 @@ body.viz-body main {
   color: var(--color-text-muted);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  min-width: 32px;
 }
 
 .map-legend__gradient {
   flex: 1;
-  height: 10px;
-  border-radius: 5px;
+  height: 8px;
+  border-radius: 4px;
   background: linear-gradient(to right, #ef5350, #fff, #4fc3f7);
-}
-
-.map-legend__title {
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-  text-align: center;
-  display: block;
-  width: 100%;
 }
 
 
@@ -1297,30 +1346,44 @@ body.viz-body main {
 .tt-growth { color: var(--color-growth);  }
 
 
-/* --- Trend Section --- */
-.trend-section {
+/* --- Trend Panel (compact bottom strip) --- */
+.trend-panel {
+  flex-shrink: 0;
+  height: 158px;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow: hidden;
 }
 
-.trend-header { margin-bottom: var(--space-4); }
+.trend-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
 
 .trend-title {
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--weight-semi);
-  margin-bottom: var(--space-1);
+  color: var(--color-text);
 }
 
 .trend-subtitle {
   font-size: var(--text-xs);
   color: var(--color-text-faint);
+  margin-left: var(--space-3);
 }
 
 .trend-chart-wrap {
-  min-height: 200px;
+  flex: 1;
   position: relative;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .trend-empty {
@@ -1330,9 +1393,9 @@ body.viz-body main {
   align-items: center;
   justify-content: center;
   color: var(--color-text-faint);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   text-align: center;
-  padding: var(--space-6);
+  padding: var(--space-4);
 }
 
 /* D3-generated trend SVG */
@@ -1376,3 +1439,97 @@ body.viz-body main {
 .trend-legend__item--births { color: var(--color-births); }
 .trend-legend__item--deaths { color: var(--color-deaths); }
 .trend-legend__item--growth { color: var(--color-growth); }
+
+
+/* ================================================================
+   COUNTRY LABELS (SVG text elements inside the D3 map group)
+   ================================================================ */
+
+.country-label {
+  fill: var(--color-text);
+  font-size: 10px;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+  /* Dark outline behind text for contrast against all map colours */
+  paint-order: stroke;
+  stroke: rgba(13, 17, 23, 0.75);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* Selected country label is highlighted in the brand colour */
+.country-label.label-selected {
+  fill: var(--color-primary);
+  font-weight: var(--weight-bold);
+  stroke: rgba(13, 17, 23, 0.9);
+  stroke-width: 4px;
+}
+
+
+/* ================================================================
+   DETAILS PANEL (inside float-details card)
+   ================================================================ */
+
+.details-panel__country-name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.details-panel__year-badge {
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semi);
+  margin-bottom: var(--space-3);
+}
+
+.details-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.details-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  background: rgba(13, 17, 23, 0.5);
+}
+
+.details-row__label {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+}
+.details-row__value {
+  font-weight: var(--weight-semi);
+  font-variant-numeric: tabular-nums;
+}
+
+.details-row--births .details-row__value { color: var(--color-births); }
+.details-row--deaths .details-row__value { color: var(--color-deaths); }
+.details-row--growth .details-row__value { color: var(--color-growth); }
+
+.details-panel__growth-indicator {
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-weight: var(--weight-medium);
+}
+
+.growth-positive {
+  background: rgba(102, 187, 106, 0.12);
+  color: var(--color-growth);
+}
+.growth-negative {
+  background: rgba(239, 83, 80, 0.12);
+  color: var(--color-deaths);
+}

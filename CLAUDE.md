@@ -152,16 +152,29 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 
 ---
 
+## Current Features Working (after polish pass)
+
+- [x] Hero section: faint D3 world-map outline background + pulsing data-point dots
+- [x] Visualization page: full-screen map stage (no sidebar)
+- [x] Floating controls card (year, metric, search, reset view)
+- [x] Floating details card (appears on country click, close button dismisses)
+- [x] Floating legend card (bottom-left, updates with metric)
+- [x] D3 zoom (scroll wheel) and pan (click+drag) on the map
+- [x] Reset view button returns to world zoom
+- [x] Country labels: appear progressively as zoom increases; selected country always labelled
+- [x] Trend panel reduced to ~158px compact strip at the bottom
+- [x] Search pans the map to the selected country without changing zoom
+- [x] No emojis anywhere in the UI
+
+---
+
 ## Known Issues / Next Steps
 
-- Map SVG sizing is relative to container at time of draw; very small screens may distort
-- Natural growth trend line clips at y=0 (negative values not shown) — could add
-  a second Y axis or separate panel
+- Natural growth trend line clips at y=0 (negative values not shown) — diverging Y axis would fix this
 - No mobile breakpoints in CSS yet — layout is desktop-first
 - `world.geojson` must be available locally (downloaded at setup time)
 - Some aggregate rows in the CSV (e.g. "World", "Africa", regional groups) will not
-  match country shapes — they appear as "no data" grey on the map but are returned
-  by `/api/data` and visible in the trend chart if searched by name
+  match country shapes — they appear as "no data" grey on the map
 
 ---
 
@@ -195,6 +208,67 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 - All routes verified in code review
 - README and CLAUDE.md finalised
 - Committed and pushed to `claude/school-assignment-app-Lz25W`
+
+---
+
+### 2026-03-25 — Polish pass
+
+**Design & Interaction upgrades (no redesign — targeted improvements only)**
+
+**Hero Section**
+- Added D3 world-map-outline background to `.hero__bg` (loaded from `/static/data/world.geojson`)
+- Faint country paths (stroke 0.18 opacity), lat/lon graticule (0.05 opacity)
+- 30 pulsing "data-point" dots at representative country centroids — CSS `@keyframes heroPulse`
+- All hero text remains fully readable (z-index layering; bg elements at opacity 0.18 and below)
+
+**Visualization Page Layout**
+- Removed rigid left sidebar (`viz-layout` + `viz-sidebar` removed)
+- New `.viz-stage` — full-screen map fills entire viewport below the header
+- Map container now `position: absolute; inset: 0` — truly full-stage
+- Cursor shows `grab` / `grabbing` feedback during pan
+
+**Floating Overlay Cards**
+- `.float-card` base: `rgba(22,27,34,0.90)` background + `backdrop-filter: blur(16px)` + box shadow
+- `.float-controls` (top-left, 240px): year slider, metric select, search, reset-view button
+- `.float-details` (top-right, 220px): country name, year, data rows, growth indicator, close button
+- `.float-legend` (bottom-left, 240px): title + gradient bar + value labels
+
+**Map Interactivity**
+- Added `d3.zoom()` with `scaleExtent([1, 10])` — scroll to zoom, drag to pan
+- All paths drawn inside `state.mapG` (single `<g>` group) — zoom transforms the group
+- `Reset view` button calls `zoomBehavior.transform` with `d3.zoomIdentity`
+- Country search now calls `panToCountry()` — translates to centroid at current zoom level
+- Selected-country `.selected` stroke upgraded (more visible on full-screen dark map)
+
+**Country Labels**
+- SVG `<text>` elements positioned at `d3.geoPath().centroid()` for each feature
+- `display: none` by default; shown progressively based on `d3.geoArea()` (spherical size) × zoom level:
+  - Zoom ≥ 1: only very large countries (Russia, Canada, …)
+  - Zoom ≥ 1.4: large countries (India, Argentina, …)
+  - Zoom ≥ 2: medium countries
+  - Zoom ≥ 3: small countries
+  - Zoom ≥ 5: all visible countries
+- Selected country label always shown, styled in brand blue (`.label-selected`)
+- Counter-scaled font: `font-size = 10 / zoomLevel` — stays readable at all zoom levels
+- `paint-order: stroke` with dark outline for contrast on all map colours
+
+**Trend Chart**
+- Reduced from 200px to 120px inner height (158px panel total)
+- Reduced margins for compact layout: `{ top:10, right:16, bottom:28, left:54 }`
+- Fewer Y-axis ticks (4 instead of 5) — cleaner at reduced height
+- Positioned as bottom strip — visually subordinate to the map
+
+**Emoji removal**
+- `contact.html`: replaced `📊 🗺️ 🛠️` with styled `.contact-info__icon-mark` text badges
+- `visualization.html`: removed `🌍` from details empty state (replaced with float-card)
+
+**Files changed in this pass**
+- `templates/visualization.html` — full layout rework (float cards, viz-stage, trend-panel)
+- `templates/home.html` — added `<div id="hero-map-bg">` inside `.hero__bg`
+- `templates/contact.html` — emoji → icon-mark badges
+- `static/css/styling.css` — new floating card styles, hero map CSS, label CSS, trend panel
+- `static/js/home.js` — added `drawHeroMap()` with D3 world outline + pulsing dots
+- `static/js/vizualization.js` — D3 zoom, labels, float-details, panToCountry, reset view
 
 ---
 

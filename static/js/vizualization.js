@@ -1,7 +1,7 @@
 /*
  * VitalMap — vizualization.js
- * D3.js choropleth world map with interactive controls,
- * country click, tooltip, details panel, and linked trend chart.
+ * D3.js choropleth world map: zoom/pan, country labels, floating panels,
+ * tooltip, details card, linked trend chart, country search.
  */
 
 (function () {
@@ -11,42 +11,45 @@
   // STATE
   // ================================================================
   var state = {
-    year:           2000,
-    metric:         "births",
-    selectedCode:   null,
-    allData:        [],       // full dataset from /api/data
-    byCodeYear:     {},       // key: "AFG_1990" → {births, deaths, natural_growth}
-    byCode:         {},       // key: "AFG"      → [{year, births, deaths, ...}, ...]
-    countryNames:   {},       // key: "AFG"      → "Afghanistan"
-    geoFeatures:    [],       // GeoJSON features from world.geojson
-    colorScale:     null,
-    mapSvg:         null,
-    projection:     null,
-    pathGen:        null,
-    trendSvg:       null
+    year:          2000,
+    metric:        "births",
+    selectedCode:  null,
+    zoomLevel:     1,
+    allData:       [],      // full dataset from /api/data
+    byCodeYear:    {},      // "AFG_1990" → row object
+    byCode:        {},      // "AFG"      → sorted array of rows
+    countryNames:  {},      // "AFG"      → "Afghanistan"
+    geoFeatures:   [],      // GeoJSON features
+    colorScale:    null,
+    mapSvg:        null,
+    mapG:          null,    // main <g> group — zoom transforms this
+    projection:    null,
+    pathGen:       null,
+    zoomBehavior:  null,
+    trendSvg:      null
   };
 
   // ================================================================
-  // METRIC META — labels, hints, colour interpolators
+  // METRIC META
   // ================================================================
   var METRIC_META = {
     births: {
-      label:       "Births",
-      hint:        "Total births per year. Sequential blue colour scale.",
+      label:        "Births",
+      hint:         "Total births per year. Sequential blue colour scale.",
       interpolator: d3.interpolateBlues,
-      diverging:   false
+      diverging:    false
     },
     deaths: {
-      label:       "Deaths",
-      hint:        "Total deaths per year. Sequential red colour scale.",
+      label:        "Deaths",
+      hint:         "Total deaths per year. Sequential red colour scale.",
       interpolator: d3.interpolateReds,
-      diverging:   false
+      diverging:    false
     },
     natural_growth: {
-      label:       "Natural Growth (Births − Deaths)",
-      hint:        "Positive = growing population. Negative = shrinking. Diverging red–blue scale.",
+      label:        "Natural Growth (Births − Deaths)",
+      hint:         "Positive = growing population. Negative = shrinking. Diverging red–blue scale.",
       interpolator: d3.interpolateRdBu,
-      diverging:   true
+      diverging:    true
     }
   };
 
@@ -71,7 +74,7 @@
   });
 
   // ================================================================
-  // DATA LOADING
+  // DATA
   // ================================================================
 
   function fetchData() {
@@ -85,21 +88,24 @@
   function processData(rows) {
     state.allData = rows;
     rows.forEach(function (row) {
-      var key = row.code + "_" + row.year;
-      state.byCodeYear[key] = row;
-
+      state.byCodeYear[row.code + "_" + row.year] = row;
       if (!state.byCode[row.code]) state.byCode[row.code] = [];
       state.byCode[row.code].push(row);
+    });
+    // Pre-sort each country's array by year
+    Object.keys(state.byCode).forEach(function (code) {
+      state.byCode[code].sort(function (a, b) { return a.year - b.year; });
     });
   }
 
   function processGeo(geojson) {
     state.geoFeatures = geojson.features;
-    // Build code → name lookup from GeoJSON properties
     geojson.features.forEach(function (f) {
       var code = f.id || (f.properties && f.properties.iso_a3);
       var name = f.properties && (f.properties.name || f.properties.NAME);
       if (code && name) state.countryNames[code] = name;
+      // Pre-compute spherical area (steradians) for label-visibility decisions
+      f._area = d3.geoArea(f);
     });
   }
 
@@ -109,7 +115,7 @@
   }
 
   // ================================================================
-  // CONTROLS SETUP
+  // CONTROLS
   // ================================================================
 
   function setupControls() {
@@ -120,6 +126,8 @@
     var searchInput  = document.getElementById("country-search");
     var searchClear  = document.getElementById("search-clear");
     var suggestions  = document.getElementById("search-suggestions");
+    var resetBtn     = document.getElementById("reset-view");
+    var detailsClose = document.getElementById("details-close");
 
     // Year slider
     yearSlider.addEventListener("input", function () {
@@ -133,7 +141,7 @@
       }
     });
 
-    // Metric dropdown
+    // Metric select
     metricSelect.addEventListener("change", function () {
       state.metric = this.value;
       document.getElementById("metric-hint").textContent = METRIC_META[state.metric].hint;
@@ -141,7 +149,7 @@
       updateLegend();
     });
 
-    // Country search
+    // Search input
     searchInput.addEventListener("input", function () {
       var q = this.value.trim().toLowerCase();
       if (q.length < 2) {
@@ -152,28 +160,24 @@
       searchClear.classList.add("visible");
       var matches = state.geoFeatures
         .filter(function (f) {
-          var name = (f.properties && f.properties.name) || "";
-          return name.toLowerCase().includes(q);
+          return ((f.properties && f.properties.name) || "").toLowerCase().includes(q);
         })
         .slice(0, 8);
 
-      if (matches.length === 0) {
-        hideSuggestions();
-        return;
-      }
+      if (!matches.length) { hideSuggestions(); return; }
 
       suggestions.innerHTML = "";
       matches.forEach(function (f) {
         var name = f.properties.name;
         var code = f.id;
         var item = document.createElement("div");
-        item.className = "suggestion-item";
+        item.className   = "suggestion-item";
         item.textContent = name;
         item.addEventListener("click", function () {
           hideSuggestions();
           searchInput.value = name;
           searchClear.classList.add("visible");
-          highlightCountry(code);
+          panToCountry(code);
           selectCountry(code);
         });
         suggestions.appendChild(item);
@@ -182,8 +186,7 @@
     });
 
     searchInput.addEventListener("blur", function () {
-      // small delay so click on suggestion registers first
-      setTimeout(hideSuggestions, 180);
+      setTimeout(hideSuggestions, 200);
     });
 
     searchClear.addEventListener("click", function () {
@@ -192,6 +195,25 @@
       hideSuggestions();
       clearHighlight();
     });
+
+    // Reset view
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        if (!state.mapSvg || !state.zoomBehavior) return;
+        state.mapSvg.transition().duration(600).ease(d3.easeCubicInOut)
+          .call(state.zoomBehavior.transform, d3.zoomIdentity);
+      });
+    }
+
+    // Close details card
+    if (detailsClose) {
+      detailsClose.addEventListener("click", function () {
+        document.getElementById("details-card").style.display = "none";
+        d3.selectAll(".country-path").classed("selected", false);
+        d3.selectAll(".country-label").classed("label-selected", false);
+        state.selectedCode = null;
+      });
+    }
 
     function hideSuggestions() {
       suggestions.classList.remove("visible");
@@ -204,137 +226,185 @@
 
   function drawMap() {
     var container = document.getElementById("map-container");
-    var W = container.clientWidth  || 800;
-    var H = container.clientHeight || 420;
+    var W = container.clientWidth  || 900;
+    var H = container.clientHeight || 480;
 
-    // Build projection
+    // Projection — slightly tighter scale to use full height
     state.projection = d3.geoNaturalEarth1()
-      .scale(W / 6.5)
+      .scale(W / 6.2)
       .translate([W / 2, H / 2]);
 
     state.pathGen = d3.geoPath().projection(state.projection);
 
-    // Create SVG
+    // Root SVG
     state.mapSvg = d3.select("#map-container")
       .append("svg")
       .attr("width",  W)
       .attr("height", H);
 
-    // Ocean / sphere background
-    state.mapSvg.append("path")
+    // Single group that receives all zoom transforms
+    state.mapG = state.mapSvg.append("g").attr("class", "map-root");
+
+    // Ocean sphere
+    state.mapG.append("path")
       .datum({ type: "Sphere" })
       .attr("class", "sphere")
       .attr("d", state.pathGen);
 
-    // Graticule lines
-    var graticule = d3.geoGraticule()();
-    state.mapSvg.append("path")
-      .datum(graticule)
+    // Lat/lon grid
+    state.mapG.append("path")
+      .datum(d3.geoGraticule()())
       .attr("class", "graticule")
       .attr("d", state.pathGen);
 
-    // Build colour scale for current state
+    // Build colour scale (uses allData fallback before paths exist)
     state.colorScale = buildColorScale(state.metric);
 
-    // Draw country paths
-    state.mapSvg.selectAll(".country-path")
+    // Country paths
+    state.mapG.selectAll(".country-path")
       .data(state.geoFeatures)
       .enter()
       .append("path")
         .attr("class", "country-path")
         .attr("d", state.pathGen)
         .attr("data-code", function (d) { return d.id || ""; })
-        .attr("fill", function (d) {
-          return countryFill(d, state.metric, state.year);
-        })
+        .attr("fill", function (d) { return countryFill(d); })
         .classed("no-data", function (d) {
-          var code = d.id;
-          return !code || !state.byCodeYear[code + "_" + state.year];
+          return !d.id || !state.byCodeYear[d.id + "_" + state.year];
         })
         .on("mousemove", onMouseMove)
         .on("mouseleave", onMouseLeave)
         .on("click", function (event, d) {
-          var code = d.id;
-          if (!code) return;
-          selectCountry(code);
+          if (d.id) selectCountry(d.id);
         });
 
-    // Window resize → redraw
+    // Country labels (inside mapG — they transform with the map)
+    var labelsG = state.mapG.append("g").attr("class", "country-labels");
+    state.geoFeatures.forEach(function (f) {
+      var centroid = state.pathGen.centroid(f);
+      if (!centroid || isNaN(centroid[0]) || isNaN(centroid[1])) return;
+      labelsG.append("text")
+        .datum(f)
+        .attr("class", "country-label")
+        .attr("data-code", f.id || "")
+        .attr("x", centroid[0])
+        .attr("y", centroid[1])
+        .text((f.properties && f.properties.name) || "")
+        .style("display", "none");
+    });
+
+    // D3 zoom + pan behaviour
+    state.zoomBehavior = d3.zoom()
+      .scaleExtent([1, 10])
+      .on("zoom", function (event) {
+        state.mapG.attr("transform", event.transform);
+        state.zoomLevel = event.transform.k;
+        // Counter-scale labels so text stays the same apparent size
+        d3.selectAll(".country-label")
+          .style("font-size", (10 / event.transform.k) + "px");
+        updateLabelVisibility();
+      });
+
+    state.mapSvg.call(state.zoomBehavior);
+
+    // Redraw on window resize
     window.addEventListener("resize", debounce(function () {
+      var savedCode  = state.selectedCode;
+      var savedZoom  = state.zoomLevel;
       d3.select("#map-container svg").remove();
+      state.trendSvg = null;
       drawMap();
-      if (state.selectedCode) {
+      updateLegend();
+      if (savedCode) {
+        selectCountry(savedCode);
         d3.selectAll(".country-path")
-          .filter(function (d) { return d.id === state.selectedCode; })
+          .filter(function (d) { return d.id === savedCode; })
           .classed("selected", true);
       }
     }, 300));
   }
 
-  // Recolour all country paths when year/metric changes
+  // ================================================================
+  // MAP UPDATE (year / metric change)
+  // ================================================================
+
   function updateMap() {
     state.colorScale = buildColorScale(state.metric);
 
     d3.selectAll(".country-path")
       .classed("no-data", function (d) {
-        var code = d.id;
-        return !code || !state.byCodeYear[code + "_" + state.year];
+        return !d.id || !state.byCodeYear[d.id + "_" + state.year];
       })
-      .transition()
-      .duration(300)
-      .attr("fill", function (d) {
-        return countryFill(d, state.metric, state.year);
-      });
+      .transition().duration(300)
+      .attr("fill", function (d) { return countryFill(d); });
   }
 
-  // Return fill colour for a feature given current metric+year
-  function countryFill(d, metric, year) {
+  function countryFill(d) {
     var code = d.id;
     if (!code) return "#21262d";
-    var row = state.byCodeYear[code + "_" + year];
+    var row = state.byCodeYear[code + "_" + state.year];
     if (!row) return "#21262d";
-    var val = row[metric];
-    if (val === undefined || val === null) return "#21262d";
+    var val = row[state.metric];
+    if (val == null) return "#21262d";
     return state.colorScale(val);
   }
 
-  // Build a D3 colour scale based on current data values for the year
   function buildColorScale(metric) {
-    var meta = METRIC_META[metric];
+    var meta   = METRIC_META[metric];
     var values = [];
 
+    // Prefer existing path data; fall back to allData scan
     d3.selectAll(".country-path").each(function (d) {
       var row = state.byCodeYear[(d.id || "") + "_" + state.year];
-      if (row && row[metric] !== undefined) values.push(row[metric]);
+      if (row && row[metric] != null) values.push(row[metric]);
     });
 
-    // Fallback: if no paths drawn yet, scan allData
-    if (values.length === 0) {
+    if (!values.length) {
       state.allData.forEach(function (row) {
-        if (row.year === state.year && row[metric] !== undefined) {
-          values.push(row[metric]);
-        }
+        if (row.year === state.year && row[metric] != null) values.push(row[metric]);
       });
     }
 
-    if (values.length === 0) {
-      return function () { return "#21262d"; };
-    }
+    if (!values.length) return function () { return "#21262d"; };
 
     var minVal = d3.min(values);
     var maxVal = d3.max(values);
 
     if (meta.diverging) {
-      // Diverging: centre at 0
       var maxAbs = Math.max(Math.abs(minVal), Math.abs(maxVal));
-      // d3.interpolateRdBu goes red (low) → white → blue (high)
-      return d3.scaleDiverging(meta.interpolator)
-        .domain([-maxAbs, 0, maxAbs]);
-    } else {
-      // Sequential: light → dark
-      return d3.scaleSequential(meta.interpolator)
-        .domain([0, maxVal]);
+      return d3.scaleDiverging(meta.interpolator).domain([-maxAbs, 0, maxAbs]);
     }
+    return d3.scaleSequential(meta.interpolator).domain([0, maxVal]);
+  }
+
+  // ================================================================
+  // COUNTRY LABELS
+  // ================================================================
+
+  // Show labels based on zoom level and pre-computed spherical area.
+  // d3.geoArea returns steradians — rough reference values:
+  //   Russia ≈ 0.23, Canada ≈ 0.20, USA ≈ 0.12, Australia ≈ 0.13,
+  //   Brazil ≈ 0.09, China ≈ 0.06, India ≈ 0.04, Argentina ≈ 0.03
+  function updateLabelVisibility() {
+    var z = state.zoomLevel || 1;
+
+    d3.selectAll(".country-label").each(function (d) {
+      var code     = d.id;
+      var area     = d._area || 0;
+      var selected = code === state.selectedCode;
+
+      var show =
+        selected                      ||  // always show selected country
+        (z >= 5   && area > 0.0003)   ||  // tiny countries at very high zoom
+        (z >= 3   && area > 0.002)    ||  // small countries at high zoom
+        (z >= 2   && area > 0.01)     ||  // medium at moderate zoom
+        (z >= 1.4 && area > 0.04)     ||  // large at low zoom
+        (z >= 1   && area > 0.12);        // only the biggest at world zoom
+
+      d3.select(this)
+        .style("display", show ? "block" : "none")
+        .classed("label-selected", selected);
+    });
   }
 
   // ================================================================
@@ -356,15 +426,15 @@
     if (row) {
       document.getElementById("tt-births").textContent = window.formatNum(row.births);
       document.getElementById("tt-deaths").textContent = window.formatNum(row.deaths);
-      var gr = row.natural_growth;
+      var gr   = row.natural_growth;
       var grEl = document.getElementById("tt-growth");
       grEl.textContent = (gr >= 0 ? "+" : "") + window.formatNum(gr);
       grEl.style.color = gr >= 0 ? "var(--color-growth)" : "var(--color-deaths)";
     } else {
-      document.getElementById("tt-births").textContent = "No data";
-      document.getElementById("tt-deaths").textContent = "No data";
-      document.getElementById("tt-growth").textContent = "No data";
-      document.getElementById("tt-growth").style.color = "";
+      document.getElementById("tt-births").textContent  = "No data";
+      document.getElementById("tt-deaths").textContent  = "No data";
+      document.getElementById("tt-growth").textContent  = "No data";
+      document.getElementById("tt-growth").style.color  = "";
     }
 
     tooltip.style.display = "block";
@@ -381,10 +451,8 @@
     var th  = tooltip.offsetHeight || 120;
     var x   = event.clientX + pad;
     var y   = event.clientY + pad;
-
     if (x + tw > window.innerWidth  - pad) x = event.clientX - tw - pad;
     if (y + th > window.innerHeight - pad) y = event.clientY - th - pad;
-
     tooltip.style.left = x + "px";
     tooltip.style.top  = y + "px";
   }
@@ -394,17 +462,40 @@
   // ================================================================
 
   function selectCountry(code) {
-    // Deselect previous
+    // Clear old selection state
     d3.selectAll(".country-path").classed("selected", false);
+    d3.selectAll(".country-label").classed("label-selected", false);
 
-    // Select new
+    // Apply new selection
     d3.selectAll(".country-path")
       .filter(function (d) { return d.id === code; })
       .classed("selected", true);
 
     state.selectedCode = code;
+    updateLabelVisibility();
     updateDetails(code);
     drawTrendChart(code);
+  }
+
+  // Pan (without changing zoom) so the chosen country is visible
+  function panToCountry(code) {
+    var feature = state.geoFeatures.find(function (f) { return f.id === code; });
+    if (!feature || !state.mapSvg || !state.zoomBehavior) return;
+
+    var centroid = state.pathGen.centroid(feature);
+    if (!centroid || isNaN(centroid[0])) return;
+
+    var container = document.getElementById("map-container");
+    var W = container.clientWidth;
+    var H = container.clientHeight;
+    var k = state.zoomLevel || 1;
+
+    // Translate so the centroid is at the viewport centre
+    var tx = W / 2 - centroid[0] * k;
+    var ty = H / 2 - centroid[1] * k;
+
+    state.mapSvg.transition().duration(500).ease(d3.easeCubicInOut)
+      .call(state.zoomBehavior.transform, d3.zoomIdentity.translate(tx, ty).scale(k));
   }
 
   function highlightCountry(code) {
@@ -419,18 +510,18 @@
   }
 
   // ================================================================
-  // DETAILS PANEL
+  // DETAILS PANEL (floating card)
   // ================================================================
 
   function updateDetails(code) {
     var name = state.countryNames[code] || code;
     var row  = state.byCodeYear[code + "_" + state.year];
 
-    document.getElementById("details-empty").style.display   = "none";
-    document.getElementById("details-content").style.display = "block";
+    var card = document.getElementById("details-card");
+    card.style.display = "block";
 
     document.getElementById("detail-country").textContent    = name;
-    document.getElementById("detail-year-badge").textContent = "Data for " + state.year;
+    document.getElementById("detail-year-badge").textContent = state.year;
 
     if (row) {
       document.getElementById("detail-births").textContent = window.formatNum(row.births);
@@ -443,16 +534,16 @@
       grEl.textContent = (gr >= 0 ? "+" : "") + window.formatNum(gr);
 
       if (gr >= 0) {
-        indEl.textContent = "↑ Population growing naturally";
+        indEl.textContent = "Growing naturally";
         indEl.className   = "details-panel__growth-indicator growth-positive";
       } else {
-        indEl.textContent = "↓ Population shrinking naturally";
+        indEl.textContent = "Shrinking naturally";
         indEl.className   = "details-panel__growth-indicator growth-negative";
       }
     } else {
-      document.getElementById("detail-births").textContent  = "No data";
-      document.getElementById("detail-deaths").textContent  = "No data";
-      document.getElementById("detail-growth").textContent  = "No data";
+      document.getElementById("detail-births").textContent = "No data";
+      document.getElementById("detail-deaths").textContent = "No data";
+      document.getElementById("detail-growth").textContent = "No data";
       document.getElementById("growth-indicator").textContent = "";
       document.getElementById("growth-indicator").className   = "details-panel__growth-indicator";
     }
@@ -464,32 +555,27 @@
 
   function drawTrendChart(code) {
     var name    = state.countryNames[code] || code;
-    var records = state.byCode[code];
+    var records = state.byCode[code];  // already sorted by year
 
-    // Update header text
-    document.getElementById("trend-title").textContent    = name + " — Births & Deaths Trend";
-    document.getElementById("trend-subtitle").textContent = "1950–2100 · estimates then medium projections";
+    document.getElementById("trend-title").textContent    = name + " — Population Trend";
+    document.getElementById("trend-subtitle").textContent = "1950–2100  ·  estimates then medium projections";
     document.getElementById("trend-empty").style.display  = "none";
     document.getElementById("trend-legend").style.display = "flex";
 
-    if (!records || records.length === 0) {
+    if (!records || !records.length) {
       document.getElementById("trend-chart-wrap").innerHTML =
-        '<div class="trend-empty"><p>No trend data available for ' + name + '.</p></div>';
+        '<div class="trend-empty"><p>No trend data for ' + name + '.</p></div>';
       return;
     }
 
-    // Sort by year
-    records = records.slice().sort(function (a, b) { return a.year - b.year; });
-
-    // Remove previous SVG if any
     d3.select("#trend-chart-wrap svg").remove();
 
-    var wrap = document.getElementById("trend-chart-wrap");
-    var W    = wrap.clientWidth  || 660;
-    var H    = 200;
-    var margin = { top: 14, right: 20, bottom: 36, left: 62 };
-    var iW   = W - margin.left - margin.right;
-    var iH   = H - margin.top  - margin.bottom;
+    var wrap   = document.getElementById("trend-chart-wrap");
+    var W      = wrap.clientWidth || 700;
+    var H      = 120;                              // reduced height
+    var margin = { top: 10, right: 16, bottom: 28, left: 54 };
+    var iW     = W - margin.left - margin.right;
+    var iH     = H - margin.top  - margin.bottom;
 
     var svg = d3.select("#trend-chart-wrap")
       .append("svg")
@@ -499,22 +585,16 @@
     var g = svg.append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    // X scale — years
-    var xScale = d3.scaleLinear()
-      .domain([1950, 2100])
-      .range([0, iW]);
+    // Scales
+    var xScale = d3.scaleLinear().domain([1950, 2100]).range([0, iW]);
 
-    // Y scale — values (births + deaths together)
     var allVals = records.flatMap(function (r) { return [r.births, r.deaths]; });
-    var yMin = 0;
-    var yMax = d3.max(allVals) * 1.05;
-
-    var yScale = d3.scaleLinear()
-      .domain([yMin, yMax])
+    var yScale  = d3.scaleLinear()
+      .domain([0, d3.max(allVals) * 1.08])
       .nice()
       .range([iH, 0]);
 
-    // X axis
+    // Axes — minimal ticks for the compact height
     g.append("g")
       .attr("class", "trend-axis")
       .attr("transform", "translate(0," + iH + ")")
@@ -522,50 +602,44 @@
         d3.axisBottom(xScale)
           .tickValues([1950, 1975, 2000, 2025, 2050, 2075, 2100])
           .tickFormat(d3.format("d"))
+          .tickSize(3)
       );
 
-    // Y axis
     g.append("g")
       .attr("class", "trend-axis")
       .call(
         d3.axisLeft(yScale)
-          .ticks(5)
+          .ticks(4)
           .tickFormat(function (d) { return window.formatNum(d); })
+          .tickSize(3)
       );
 
-    // Line generators
-    var lineBirths = d3.line()
-      .x(function (r) { return xScale(r.year); })
-      .y(function (r) { return yScale(r.births); })
-      .defined(function (r) { return r.births != null; });
+    // Line helpers
+    function makeLine(yAccessor, definedFn) {
+      return d3.line()
+        .x(function (r) { return xScale(r.year); })
+        .y(function (r) { return yScale(yAccessor(r)); })
+        .defined(definedFn);
+    }
 
-    var lineDeaths = d3.line()
-      .x(function (r) { return xScale(r.year); })
-      .y(function (r) { return yScale(r.deaths); })
-      .defined(function (r) { return r.deaths != null; });
+    var lineBirths = makeLine(
+      function (r) { return r.births; },
+      function (r) { return r.births != null; }
+    );
+    var lineDeaths = makeLine(
+      function (r) { return r.deaths; },
+      function (r) { return r.deaths != null; }
+    );
+    var lineGrowth = makeLine(
+      function (r) { return Math.max(0, r.natural_growth); },
+      function (r) { return r.natural_growth != null; }
+    );
 
-    var lineGrowth = d3.line()
-      .x(function (r) { return xScale(r.year); })
-      .y(function (r) { return yScale(Math.max(0, r.natural_growth)); })
-      .defined(function (r) { return r.natural_growth != null; });
+    g.append("path").datum(records).attr("class", "trend-line-births").attr("d", lineBirths);
+    g.append("path").datum(records).attr("class", "trend-line-deaths").attr("d", lineDeaths);
+    g.append("path").datum(records).attr("class", "trend-line-growth").attr("d", lineGrowth);
 
-    // Draw lines
-    g.append("path")
-      .datum(records)
-      .attr("class", "trend-line-births")
-      .attr("d", lineBirths);
-
-    g.append("path")
-      .datum(records)
-      .attr("class", "trend-line-deaths")
-      .attr("d", lineDeaths);
-
-    g.append("path")
-      .datum(records)
-      .attr("class", "trend-line-growth")
-      .attr("d", lineGrowth);
-
-    // Vertical marker for selected year
+    // Year marker
     state.trendSvg = { g: g, xScale: xScale, iH: iH };
     drawYearMarker(g, xScale, iH, state.year);
   }
@@ -574,16 +648,13 @@
     g.selectAll(".trend-year-line").remove();
     g.append("line")
       .attr("class", "trend-year-line")
-      .attr("x1", xScale(year))
-      .attr("x2", xScale(year))
-      .attr("y1", 0)
-      .attr("y2", iH);
+      .attr("x1", xScale(year)).attr("x2", xScale(year))
+      .attr("y1", 0).attr("y2", iH);
   }
 
   function updateYearMarker() {
     if (!state.trendSvg) return;
-    var ts = state.trendSvg;
-    drawYearMarker(ts.g, ts.xScale, ts.iH, state.year);
+    drawYearMarker(state.trendSvg.g, state.trendSvg.xScale, state.trendSvg.iH, state.year);
   }
 
   // ================================================================
@@ -591,23 +662,19 @@
   // ================================================================
 
   function updateLegend() {
-    var meta      = METRIC_META[state.metric];
-    var gradEl    = document.getElementById("legend-gradient");
-    var lowEl     = document.getElementById("legend-low");
-    var highEl    = document.getElementById("legend-high");
-    var titleEl   = document.getElementById("legend-title");
+    var meta    = METRIC_META[state.metric];
+    var gradEl  = document.getElementById("legend-gradient");
+    var lowEl   = document.getElementById("legend-low");
+    var highEl  = document.getElementById("legend-high");
+    var titleEl = document.getElementById("legend-title");
 
     titleEl.textContent = meta.label;
 
-    // Get value range for current year
     var values = [];
     state.allData.forEach(function (row) {
-      if (row.year === state.year && row[state.metric] !== undefined) {
-        values.push(row[state.metric]);
-      }
+      if (row.year === state.year && row[state.metric] != null) values.push(row[state.metric]);
     });
-
-    if (values.length === 0) return;
+    if (!values.length) return;
 
     var minVal = d3.min(values);
     var maxVal = d3.max(values);
@@ -616,16 +683,13 @@
       var maxAbs = Math.max(Math.abs(minVal), Math.abs(maxVal));
       lowEl.textContent  = "−" + window.formatNum(maxAbs);
       highEl.textContent = "+" + window.formatNum(maxAbs);
-      gradEl.style.background =
-        "linear-gradient(to right, #ef5350, #fff, #1565c0)";
+      gradEl.style.background = "linear-gradient(to right, #ef5350, #fff, #1565c0)";
     } else {
       lowEl.textContent  = "0";
       highEl.textContent = window.formatNum(maxVal);
-      if (state.metric === "births") {
-        gradEl.style.background = "linear-gradient(to right, #e3f2fd, #1565c0)";
-      } else {
-        gradEl.style.background = "linear-gradient(to right, #ffebee, #b71c1c)";
-      }
+      gradEl.style.background = state.metric === "births"
+        ? "linear-gradient(to right, #e3f2fd, #1565c0)"
+        : "linear-gradient(to right, #ffebee, #b71c1c)";
     }
   }
 
@@ -637,8 +701,7 @@
     var timer;
     return function () {
       clearTimeout(timer);
-      var args = arguments;
-      var ctx  = this;
+      var args = arguments, ctx = this;
       timer = setTimeout(function () { fn.apply(ctx, args); }, delay);
     };
   }
