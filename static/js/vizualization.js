@@ -314,7 +314,7 @@
     // Country labels (inside mapG — they transform with the map)
     var labelsG = state.mapG.append("g").attr("class", "country-labels");
     state.geoFeatures.forEach(function (f) {
-      var centroid = state.pathGen.centroid(f);
+      var centroid = mainCentroid(f, state.pathGen);
       if (!centroid || isNaN(centroid[0]) || isNaN(centroid[1])) return;
       labelsG.append("text")
         .datum(f)
@@ -327,21 +327,17 @@
     });
 
     // D3 zoom + pan behaviour.
-    // translateExtent([[0,0],[W,H]]) clamps pan to the actual map bounds:
-    //   — at zoom 1  → no panning (map exactly fills viewport)
-    //   — at zoom 2  → can pan freely within the map, cannot leave it
-    //   — at zoom 10 → full exploration freedom, still anchored to map
-    // This is the correct fix: extent scales with k automatically.
+    // translateExtent uses the actual projected sphere pixel bounds — this
+    // is the correct anchor: the sphere boundary is what we want to clamp to,
+    // not the full SVG rectangle (which includes empty margin above/below the sphere).
+    var sBounds = state.pathGen.bounds({ type: "Sphere" });
     state.zoomBehavior = d3.zoom()
       .scaleExtent([1, 10])
-      .translateExtent([[0, 0], [W, H]])
+      .translateExtent(sBounds)
       .on("zoom", function (event) {
         state.mapG.attr("transform", event.transform);
         state.zoomLevel = event.transform.k;
-        // Counter-scale labels so text stays the same apparent size
-        d3.selectAll(".country-label")
-          .style("font-size", (10 / event.transform.k) + "px");
-        updateLabelVisibility();
+        scheduleLabels();
       });
 
     state.mapSvg.call(state.zoomBehavior);
@@ -392,17 +388,9 @@
     var meta   = METRIC_META[metric];
     var values = [];
 
-    // Prefer existing path data; fall back to allData scan
-    d3.selectAll(".country-path").each(function (d) {
-      var row = state.byCodeYear[(d.id || "") + "_" + state.year];
-      if (row && row[metric] != null) values.push(row[metric]);
+    state.allData.forEach(function (row) {
+      if (row.year === state.year && row[metric] != null) values.push(row[metric]);
     });
-
-    if (!values.length) {
-      state.allData.forEach(function (row) {
-        if (row.year === state.year && row[metric] != null) values.push(row[metric]);
-      });
-    }
 
     if (!values.length) return function () { return "#21262d"; };
 
@@ -420,30 +408,67 @@
   // COUNTRY LABELS
   // ================================================================
 
+  // RAF-throttled label update — zoom fires on every animation frame;
+  // we coalesce rapid calls so only one DOM pass runs per rendered frame.
+  var _labelRafPending = false;
+  function scheduleLabels() {
+    if (_labelRafPending) return;
+    _labelRafPending = true;
+    requestAnimationFrame(function () {
+      _labelRafPending = false;
+      updateLabelVisibility();
+    });
+  }
+
   // Show labels based on zoom level and pre-computed spherical area.
   // d3.geoArea returns steradians — rough reference values:
   //   Russia ≈ 0.23, Canada ≈ 0.20, USA ≈ 0.12, Australia ≈ 0.13,
   //   Brazil ≈ 0.09, China ≈ 0.06, India ≈ 0.04, Argentina ≈ 0.03
+  // Font-size counter-scaling is applied only to visible labels — avoids
+  // styling ~250 elements on every zoom tick.
   function updateLabelVisibility() {
-    var z = state.zoomLevel || 1;
+    var z        = state.zoomLevel || 1;
+    var fontSize = (10 / z) + "px";
 
     d3.selectAll(".country-label").each(function (d) {
-      var code     = d.id;
       var area     = d._area || 0;
-      var selected = code === state.selectedCode;
+      var selected = d.id === state.selectedCode;
 
       var show =
-        selected                      ||  // always show selected country
-        (z >= 5   && area > 0.0003)   ||  // tiny countries at very high zoom
-        (z >= 3   && area > 0.002)    ||  // small countries at high zoom
-        (z >= 2   && area > 0.01)     ||  // medium at moderate zoom
-        (z >= 1.4 && area > 0.04)     ||  // large at low zoom
-        (z >= 1   && area > 0.12);        // only the biggest at world zoom
+        selected                    ||
+        (z >= 5   && area > 0.0003) ||
+        (z >= 3   && area > 0.002)  ||
+        (z >= 2   && area > 0.01)   ||
+        (z >= 1.4 && area > 0.04)   ||
+        (z >= 1   && area > 0.12);
 
-      d3.select(this)
-        .style("display", show ? "block" : "none")
-        .classed("label-selected", selected);
+      var el = d3.select(this);
+      if (show) {
+        el.style("display", "block")
+          .style("font-size", fontSize)
+          .classed("label-selected", selected);
+      } else {
+        el.style("display", "none")
+          .classed("label-selected", false);
+      }
     });
+  }
+
+  // For MultiPolygon features (France, Norway, USA, Indonesia, Russia, …)
+  // the naive centroid of the whole feature is pulled off-mainland by distant
+  // territories. Instead, find the polygon ring with the largest spherical
+  // area and return its centroid — that's always the main landmass.
+  function mainCentroid(feature, pathGen) {
+    if (!feature.geometry) return pathGen.centroid(feature);
+    if (feature.geometry.type !== "MultiPolygon") return pathGen.centroid(feature);
+    var best     = null;
+    var bestArea = -1;
+    feature.geometry.coordinates.forEach(function (polyCoords) {
+      var area = d3.geoArea({ type: "Polygon", coordinates: polyCoords });
+      if (area > bestArea) { bestArea = area; best = polyCoords; }
+    });
+    if (!best) return pathGen.centroid(feature);
+    return pathGen.centroid({ type: "Polygon", coordinates: best });
   }
 
   // ================================================================
@@ -521,7 +546,7 @@
     var feature = state.geoFeatures.find(function (f) { return f.id === code; });
     if (!feature || !state.mapSvg || !state.zoomBehavior) return;
 
-    var centroid = state.pathGen.centroid(feature);
+    var centroid = mainCentroid(feature, state.pathGen);
     if (!centroid || isNaN(centroid[0])) return;
 
     var container = document.getElementById("map-container");

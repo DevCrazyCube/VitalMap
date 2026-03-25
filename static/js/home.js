@@ -28,23 +28,13 @@
       .to("#hero-actions", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
       .to("#hero-scroll",  { opacity: 1,        duration: 0.8 }, "-=0.1");
 
-    // ── 2. Story section — intro then staggered metric rows ──────────
-    gsap.to(".story .reveal-up", {
-      scrollTrigger: { trigger: ".story", start: "top 78%", toggleActions: "play none none none" },
-      opacity: 1, y: 0, duration: 0.8, ease: "power3.out"
-    });
-
+    // ── 2. Story section — staggered metric rows ─────────────────────
     gsap.to(".story .metric-row.reveal-fade", {
       scrollTrigger: { trigger: ".story__metrics", start: "top 82%", toggleActions: "play none none none" },
       opacity: 1, y: 0, duration: 0.65, ease: "power3.out", stagger: 0.14
     });
 
-    // ── 3. Why section — lead + staggered stat blocks ────────────────
-    gsap.to(".why .reveal-up", {
-      scrollTrigger: { trigger: ".why", start: "top 76%", toggleActions: "play none none none" },
-      opacity: 1, y: 0, duration: 0.8, ease: "power3.out"
-    });
-
+    // ── 3. Why section — staggered stat blocks ────────────────────────
     gsap.to(".why .stat-block.reveal-fade", {
       scrollTrigger: { trigger: ".why__stats", start: "top 82%", toggleActions: "play none none none" },
       opacity: 1, y: 0, duration: 0.65, ease: "power2.out", stagger: 0.10

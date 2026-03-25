@@ -213,6 +213,23 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 
 ---
 
+## Current Features Working (after final polish pass)
+
+- [x] Map pan bounds: sphere-projected `translateExtent(pathGen.bounds({type:"Sphere"}))` — prevents drift into empty margins above/below the sphere at any zoom level
+- [x] MultiPolygon label centroid fix: `mainCentroid()` helper uses `d3.geoArea()` to find the largest polygon ring and returns its centroid — France, Norway, USA, Indonesia, Russia, etc. all labelled on their mainland
+- [x] `panToCountry()` also uses `mainCentroid()` — search pans to correct landmass
+- [x] `buildColorScale()` DOM scan removed — uses `state.allData` directly (always populated)
+- [x] Label visibility updates RAF-throttled via `scheduleLabels()` — single DOM pass per rendered frame
+- [x] Font-size counter-scaling moved inside `updateLabelVisibility()` — applied only to visible labels
+- [x] Home story section: intro block removed (no kicker/lead paragraph above metric rows)
+- [x] Metric rows simplified: index numbers and scale tags removed — just name + description
+- [x] Home why section: lead paragraph removed — stat blocks stand alone
+- [x] Preview overlay: title and hint text removed — CTA button only, map speaks for itself
+- [x] Howto section: separator arrows removed — steps read naturally left-to-right
+- [x] CTA section: kicker label removed — headline stands alone
+
+---
+
 ## Known Issues / Next Steps
 
 - Natural growth trend line clips at y=0 (negative values not shown) — diverging Y axis would fix this
@@ -464,6 +481,45 @@ dark design.
 - `templates/home.html` — full section restructure (story, why, preview, howto, cta-final)
 - `static/css/styling.css` — replaced all home-page section CSS; added `.reveal-fade`
 - `static/js/home.js` — updated GSAP targets; added `drawPreviewMap()`
+- `CLAUDE.md` — updated
+
+---
+
+### 2026-03-25 — Final polish pass (correctness, performance, declutter)
+
+**Map correctness**
+- `mainCentroid(feature, pathGen)` helper added to `vizualization.js`
+  - For `MultiPolygon` features, iterates all polygon rings via `d3.geoArea()` and returns
+    the centroid of the largest ring — always the mainland
+  - Used in both the label-drawing loop and `panToCountry()` — fixes France, Norway, USA,
+    Indonesia, Russia, and any other country with distant territories
+- Pan bounds now use `state.pathGen.bounds({type:"Sphere"})` as `translateExtent`
+  - This is the pixel bounding box of the projected sphere — the real map boundary
+  - Prevents drift into the empty SVG margins above/below the sphere at all zoom levels
+  - Previous `[[0,0],[W,H]]` included the full SVG rectangle (which is taller than the sphere)
+
+**Performance**
+- `buildColorScale()` DOM scan removed — the `d3.selectAll(".country-path").each()` block
+  was redundant (allData is always loaded before drawMap runs); now uses allData directly
+- Zoom handler no longer bulk-updates all ~250 label font-sizes on every animation frame
+- `scheduleLabels()` RAF gate: coalesces rapid zoom events into one DOM pass per frame
+- Font-size counter-scaling moved inside `updateLabelVisibility()` — applied only to visible
+  labels (a small fraction of all labels at typical zoom levels)
+
+**Home page declutter**
+- `story__intro` block removed (kicker "Three numbers…" + lead paragraph)
+- Metric rows simplified to 2-column grid (name + description only) — index numbers and
+  scale-tag pills removed; `.metric-row` CSS updated from 4 → 2 column grid template
+- `why__lead` paragraph removed — stat blocks are self-explanatory at this point
+- Preview overlay reduced to CTA button only — map background makes the product obvious
+- Howto `→` separator elements removed — steps read cleanly without punctuation
+- CTA kicker "The data is waiting" removed — headline stands alone
+
+**Files changed in this pass**
+- `static/js/vizualization.js` — mainCentroid, sphere translateExtent, RAF labels, buildColorScale
+- `templates/home.html` — story intro, metric row index/tag, why lead, preview overlay, howto sep, CTA kicker removed
+- `static/css/styling.css` — removed corresponding dead CSS rules; metric-row grid updated
+- `static/js/home.js` — removed obsolete story/why reveal-up GSAP targets
 - `CLAUDE.md` — updated
 
 ---

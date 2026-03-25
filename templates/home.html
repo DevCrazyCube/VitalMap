@@ -39,42 +39,28 @@
      ============================================================ -->
 <section class="story" id="story">
   <div class="container">
-    <div class="story__intro reveal-up">
-      <p class="story__kicker">Three numbers. Every country. 150 years of history.</p>
-      <p class="story__lead">
-        Hidden inside a single dataset are birth and death records for 200+ countries
-        across 150 years of estimates and 75 years of scientific projections.
-        VitalMap makes that data visible.
-      </p>
-    </div>
     <div class="story__metrics">
       <div class="metric-row metric-row--births reveal-fade">
-        <span class="metric-row__index">01</span>
         <span class="metric-row__name">Births</span>
         <p class="metric-row__desc">
           Live births per year. High rates signal young, growing populations —
           rising demand for schools, housing, and jobs.
         </p>
-        <span class="metric-row__tag">Blue scale on map</span>
       </div>
       <div class="metric-row metric-row--deaths reveal-fade">
-        <span class="metric-row__index">02</span>
         <span class="metric-row__name">Deaths</span>
         <p class="metric-row__desc">
           Total deaths per year. Rising rates in an ageing society signal
           healthcare pressure — a challenge across much of Europe and East Asia.
         </p>
-        <span class="metric-row__tag">Red scale on map</span>
       </div>
       <div class="metric-row metric-row--growth reveal-fade">
-        <span class="metric-row__index">03</span>
         <span class="metric-row__name">Natural Growth</span>
         <p class="metric-row__desc">
           Births minus deaths. Positive means the population grows from within.
           Negative — already happening in several countries — means it shrinks
           without immigration.
         </p>
-        <span class="metric-row__tag">Diverging scale on map</span>
       </div>
     </div>
   </div>
@@ -86,12 +72,6 @@
      ============================================================ -->
 <section class="why" id="why">
   <div class="container">
-    <p class="why__lead reveal-up">
-      Population is the foundation beneath every policy decision. A country gaining
-      four million people per year needs a very different plan than one losing
-      two hundred thousand. Climate adaptation, pension systems, city planning —
-      all of them are downstream of the birth-death balance.
-    </p>
     <div class="why__stats">
       <div class="stat-block reveal-fade" data-delay="0">
         <span class="stat-block__value">200+</span>
@@ -121,8 +101,6 @@
   <div class="preview__map-frame" id="preview-map-frame">
     <div id="preview-map-bg" aria-hidden="true"></div>
     <div class="preview__overlay">
-      <h2 class="preview__title reveal-up">A world map that answers your questions</h2>
-      <p class="preview__hint reveal-up">Scroll to zoom &middot; Drag to pan &middot; Click any country to explore</p>
       <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl preview__cta reveal-up">
         Enter the Map →
       </a>
@@ -144,7 +122,6 @@
           <span class="howto__step-desc">Drag the slider from 1950 to 2100</span>
         </div>
       </div>
-      <div class="howto__sep" aria-hidden="true">→</div>
       <div class="howto__step reveal-fade" data-delay="1">
         <span class="howto__step-num">02</span>
         <div class="howto__step-body">
@@ -152,7 +129,6 @@
           <span class="howto__step-desc">Switch births, deaths, or natural growth</span>
         </div>
       </div>
-      <div class="howto__sep" aria-hidden="true">→</div>
       <div class="howto__step reveal-fade" data-delay="2">
         <span class="howto__step-num">03</span>
         <div class="howto__step-body">
@@ -160,7 +136,6 @@
           <span class="howto__step-desc">See exact data and a 1950–2100 trend chart</span>
         </div>
       </div>
-      <div class="howto__sep" aria-hidden="true">→</div>
       <div class="howto__step reveal-fade" data-delay="3">
         <span class="howto__step-num">04</span>
         <div class="howto__step-body">
@@ -180,7 +155,6 @@
   <div class="cta-final__glow" aria-hidden="true"></div>
   <div class="container">
     <div class="cta-final__inner reveal-up">
-      <p class="cta-final__kicker">The data is waiting</p>
       <h2 class="cta-final__title">
         Every country. Every year.<br />All in one map.
       </h2>
