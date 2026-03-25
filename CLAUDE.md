@@ -639,6 +639,75 @@ structural and visual approach.
 
 ---
 
+### 2026-03-25 — Hero and landing polish pass (authored identity, globe intro)
+
+**Problem addressed:** Landing page felt like "premium AI template slop" — system fonts, uppercase
+cyan eyebrow, standard fade-up animations, decorative map background with no authored signature move.
+
+**Typography**
+- Added web fonts via Google Fonts CDN: **Space Grotesk** (300–700) for all sans text,
+  **JetBrains Mono** (400–500) for mono/data labels
+- Updated `--font-sans` and `--font-mono` tokens in `variables.css`
+- Space Grotesk is geometric + humanist, technical-adjacent — distinct from system-ui without
+  being sci-fi or gimmicky; immediately gives the site a curated, authored identity
+- Hero title: `letter-spacing` tightened to -2px, `font-feature-settings: "ss01" 1` (single-story
+  `a` alternate), `max-width` narrowed to 720px to match the new line break
+- Story chapter metric words: `letter-spacing` reduced from -3px to -2px for Space Grotesk optically
+- Hero sub: `font-size` 1.05rem (was 1.125rem), `line-height` 1.7 (was 1.8), `max-width` 520px
+
+**Eyebrow redesign**
+- Removed the uppercase-cyan-badge pattern (the most common "AI template" signal)
+- New structure: mono `01` tag (faint, `--color-text-faint`) + descriptor text in muted sans
+- No `text-transform: uppercase`, no accent colour — reads as a data-system field label
+- Markup: `<span class="hero__eyebrow-tag">01</span><span class="hero__eyebrow-text">...</span>`
+
+**Title line break**
+- "The World Is / Being Rewritten" → "The World / Is Being Rewritten"
+- "The World" alone on line 1 = short declarative subject header
+- Full predicate "Is Being Rewritten" in accent colour on line 2 = more visual mass
+
+**Hero background gradient**
+- Added a third radial gradient: deep-navy pool centred at 50% 55% — gives the globe a visual
+  "surface" to sit against; barely perceptible but removes the flat-background float feel
+
+**Globe intro sequence (signature moment)**
+- New `#hero-globe-bg` layer added to `.hero__bg` (z-index:1, before `#hero-map-bg`)
+- New `drawHeroGlobe()` function in `home.js`:
+  - D3 `geoOrthographic` projection, sphere diameter = `min(innerWidth/H * 0.72, 520px)`
+  - Centered via CSS flexbox on parent
+  - Ocean: SVG `radialGradient` (`#globe-ocean-grad`) off-centre highlight (#0e2540 → #040d18)
+  - Graticule: faint cyan (0.07 opacity), country paths: #0f2033 fill, 0.18 cyan border
+  - CSS `filter: drop-shadow(0 0 48px rgba(79,195,247,0.22)) drop-shadow(0 0 12px ...)` — luminous orb
+  - `d3.timer` starts after GeoJSON loads: 10°/sec west rotation from -15° yaw, -25° tilt
+  - Timer reference stored on `container._d3timer` for cleanup
+- `#hero-map-bg` now starts at `opacity: 0` (added to CSS)
+
+**New GSAP hero timeline (globe → crossfade → text cascade)**
+- Uses absolute time positions (numeric second argument to `.to()`) for explicit beat control
+- 0.10s: Globe fades in (0.6s, power2.out)
+- 1.30s: Globe fades out AND flat map fades in simultaneously (0.8s crossfade, power2.inOut)
+- 1.30s onComplete: D3 timer stopped to free CPU
+- 1.70s: Eyebrow (y:20→0, 0.6s, power3.out)
+- 1.95s: Title (y:30→0, 0.85s, **power4.out** — heavier decel for display type)
+- 2.30s: Sub (y:20→0, 0.65s)
+- 2.55s: Actions (y:16→0, 0.55s)
+- 2.75s: Scroll hint (0.7s)
+- Total settle: ~3.45s — brief system-boot feel, not a loading screen
+- Graceful fallback: if GSAP fails to load, all elements shown at opacity:1 immediately
+
+**Files changed in this pass**
+- `templates/base.html` — Google Fonts preconnect + stylesheet link
+- `static/css/variables.css` — `--font-sans` and `--font-mono` updated
+- `templates/home.html` — `#hero-globe-bg` div added; eyebrow markup restructured; title rebroken
+- `static/css/styling.css` — globe layer CSS, `#hero-globe-bg` + `.hero__globe-svg`, `#hero-map-bg`
+  opacity:0, hero bg gradient (third pool added), eyebrow CSS restructured, title letter-spacing
+  + font-feature-settings, sub size/line-height, story metric letter-spacing
+- `static/js/home.js` — `drawHeroGlobe()` added; `DOMContentLoaded` handler rewritten with new
+  absolute-position GSAP timeline; story/gateway/finale sections unchanged
+- `CLAUDE.md` — updated
+
+---
+
 ## Decisions Made and Why
 
 | Decision | Reason |

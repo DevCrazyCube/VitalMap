@@ -38,8 +38,8 @@
   --color-overlay:     rgba(13,17,23,0.80);
 
   /* ── Typography ── */
-  --font-sans:   'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-mono:   'Cascadia Code', 'Fira Mono', monospace;
+  --font-sans:   'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono:   'JetBrains Mono', 'Cascadia Code', 'Fira Mono', monospace;
 
   --text-xs:   0.75rem;
   --text-sm:   0.875rem;
