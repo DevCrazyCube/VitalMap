@@ -77,12 +77,14 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 - D3 `geoNaturalEarth1()` projection
 - SVG paths coloured by current metric + year
 - Transitions on update (300ms)
-- No-data countries: `#21262d` (dark muted)
+- Ocean: SVG `<radialGradient>` — `#0e2540` centre → `#060f1a` edge (deep navy)
+- No-data countries: `#131f2e` (dark blue-gray, harmonises with ocean)
 
-### Colour scales
-- **births:** `d3.scaleSequential(d3.interpolateBlues)` domain `[0, max]`
-- **deaths:** `d3.scaleSequential(d3.interpolateReds)` domain `[0, max]`
-- **natural_growth:** `d3.scaleDiverging(d3.interpolateRdBu)` domain `[-maxAbs, 0, maxAbs]`
+### Colour scales (dark-adapted "night atlas" palette)
+- **births:** `d3.scaleSequential(_interpBirths)` — dark navy `#0b1e30` → luminous cyan `#4fc3f7`
+- **deaths:** `d3.scaleSequential(_interpDeaths)` — very dark muted red `#1c080c` → coral-red `#ef5350`
+- **natural_growth:** `d3.scaleDiverging(_interpGrowth)` — deep red `#9b1717` → dark slate `#1a2635` → steel blue `#1565c0`
+- No-data countries: `#131f2e` (dark blue-gray, harmonises with ocean)
 
 ### Tooltip
 - Floats at cursor position, avoids viewport edges
@@ -165,6 +167,24 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 - [x] Trend panel reduced to ~158px compact strip at the bottom
 - [x] Search pans the map to the selected country without changing zoom
 - [x] No emojis anywhere in the UI
+
+---
+
+## Current Features Working (after night-atlas map styling pass)
+
+- [x] Ocean rendered as deep navy radial gradient (SVG defs `#ocean-gradient`)
+- [x] No-data countries use dark blue-gray `#131f2e` (blends with ocean)
+- [x] Births choropleth: dark navy → luminous cyan (dark-map adapted)
+- [x] Deaths choropleth: dark muted red → coral-red (dark-map adapted)
+- [x] Natural growth choropleth: deep red → dark slate → steel blue (dark-map adapted)
+- [x] Country borders: subtle blue-gray `rgba(70,120,175,0.22)` at 0.3px
+- [x] Graticule: barely-visible navy `rgba(30,75,140,0.10)` at 0.3px
+- [x] Hover: `brightness(1.20)` filter + soft cyan-blue border stroke
+- [x] Selected: 2px cyan stroke + `drop-shadow` glow
+- [x] No-data hover: filter suppressed, cursor default preserved
+- [x] Labels: lighter weight, thinner navy halo (1.8px) — no chunky capsule
+- [x] Selected label: cyan semi-bold with minimal halo
+- [x] Legend gradient bar updated to match dark-adapted scales
 
 ---
 
@@ -269,6 +289,60 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 - `static/css/styling.css` — new floating card styles, hero map CSS, label CSS, trend panel
 - `static/js/home.js` — added `drawHeroMap()` with D3 world outline + pulsing dots
 - `static/js/vizualization.js` — D3 zoom, labels, float-details, panToCountry, reset view
+
+---
+
+### 2026-03-25 — Night-atlas map styling pass
+
+**Goal:** Integrate the map fully into the dark visual language of the site. The previous
+map used light D3 colour scales (interpolateBlues, interpolateReds, interpolateRdBu) that
+produce light colours at low values — fine on white backgrounds, but disconnected on the
+dark design.
+
+**Ocean**
+- Replaced flat `#0a0f14` sphere fill with an SVG `<radialGradient>` (`#ocean-gradient`)
+- Centre: `#0e2540` (deep navy blue) → 55%: `#091929` → edge: `#060f1a`
+- Inline `.attr("fill", "url(#ocean-gradient)")` on the sphere path; CSS `.sphere` retained as fallback
+
+**Country fills**
+- Replaced D3 built-in interpolators with three custom functions defined before METRIC_META:
+  - `_interpBirths`: `#0b1e30` → `#4fc3f7` — dark navy to luminous cyan
+  - `_interpDeaths`: `#1c080c` → `#ef5350` — near-black muted red to coral-red
+  - `_interpGrowth` (diverging): `#9b1717` → `#1a2635` → `#1565c0`
+- Low values now blend smoothly into the ocean base instead of turning white/light
+- No-data fill: `#21262d` → `#131f2e` (dark blue-gray, harmonises with ocean)
+
+**Borders**
+- Default stroke: `#30363d` (gray) → `rgba(70, 120, 175, 0.22)` at 0.3px — subtle blue-gray
+- Coastlines are visible as the slightly darker ocean contrast; no separate treatment needed
+- Graticule: `var(--color-border-soft)` → `rgba(30, 75, 140, 0.10)` — barely-visible navy grid
+
+**Hover**
+- Removed harsh near-white stroke (`#e6edf3`) → soft cyan-blue `rgba(130, 195, 240, 0.65)` at 0.7px
+- Added `filter: brightness(1.20)` — country brightens subtly on hover
+- Added `filter` to the CSS transition list for smoothness
+- No-data countries: hover filter suppressed (`filter: none`), border reset
+
+**Selected state**
+- Cyan stroke kept (`var(--color-primary)`) at 2px
+- Added `filter: drop-shadow(0 0 5px rgba(79,195,247,0.48))` — luminous glow
+- Hover-over-selected intensifies glow slightly
+
+**Labels**
+- Fill: `var(--color-text)` (#e6edf3, too bright) → `rgba(185, 210, 230, 0.70)` (muted light)
+- Font-weight: medium → normal (lighter, less aggressive)
+- Halo stroke-width: 3px → 1.8px (removes chunky capsule appearance)
+- Halo colour: `rgba(13,17,23,0.75)` → `rgba(6,15,26,0.55)` (deeper navy, lower opacity)
+- Selected label: semi-bold, 2px halo — readable without being heavy
+
+**Legend gradient bar**
+- births: `linear-gradient(#e3f2fd → #1565c0)` → `linear-gradient(#0b1e30 → #4fc3f7)`
+- deaths: `linear-gradient(#ffebee → #b71c1c)` → `linear-gradient(#1c080c → #ef5350)`
+- natural_growth: `linear-gradient(#ef5350, #fff, #1565c0)` → `linear-gradient(#9b1717, #1a2635, #1565c0)`
+
+**Files changed in this pass**
+- `static/js/vizualization.js` — custom interpolators, SVG defs/gradient, no-data color, legend
+- `static/css/styling.css` — country-path rules, graticule, sphere fallback, label system
 
 ---
 

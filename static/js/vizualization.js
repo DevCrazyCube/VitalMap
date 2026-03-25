@@ -30,25 +30,48 @@
   };
 
   // ================================================================
+  // DARK-ADAPTED COLOUR INTERPOLATORS
+  // Designed for a deep navy ocean background — low values blend into
+  // the map base; high values read as luminous accent colours.
+  // ================================================================
+
+  // Births: dark navy → luminous cyan-blue
+  var _interpBirths = function (t) {
+    return d3.interpolateRgb("#0b1e30", "#4fc3f7")(t);
+  };
+
+  // Deaths: very dark muted red → coral-red
+  var _interpDeaths = function (t) {
+    return d3.interpolateRgb("#1c080c", "#ef5350")(t);
+  };
+
+  // Natural growth: deep red → dark slate → steel blue
+  // t=0 maps to negative max, t=0.5 to zero, t=1 to positive max
+  var _interpGrowth = function (t) {
+    if (t < 0.5) return d3.interpolateRgb("#9b1717", "#1a2635")(t * 2);
+    return d3.interpolateRgb("#1a2635", "#1565c0")((t - 0.5) * 2);
+  };
+
+  // ================================================================
   // METRIC META
   // ================================================================
   var METRIC_META = {
     births: {
       label:        "Births",
       hint:         "Total births per year. Sequential blue colour scale.",
-      interpolator: d3.interpolateBlues,
+      interpolator: _interpBirths,
       diverging:    false
     },
     deaths: {
       label:        "Deaths",
       hint:         "Total deaths per year. Sequential red colour scale.",
-      interpolator: d3.interpolateReds,
+      interpolator: _interpDeaths,
       diverging:    false
     },
     natural_growth: {
       label:        "Natural Growth (Births − Deaths)",
       hint:         "Positive = growing population. Negative = shrinking. Diverging red–blue scale.",
-      interpolator: d3.interpolateRdBu,
+      interpolator: _interpGrowth,
       diverging:    true
     }
   };
@@ -242,14 +265,24 @@
       .attr("width",  W)
       .attr("height", H);
 
+    // SVG defs — ocean gradient
+    var defs = state.mapSvg.append("defs");
+    var oceanGrad = defs.append("radialGradient")
+      .attr("id", "ocean-gradient")
+      .attr("cx", "50%").attr("cy", "50%").attr("r", "55%");
+    oceanGrad.append("stop").attr("offset", "0%")  .attr("stop-color", "#0e2540");
+    oceanGrad.append("stop").attr("offset", "55%") .attr("stop-color", "#091929");
+    oceanGrad.append("stop").attr("offset", "100%").attr("stop-color", "#060f1a");
+
     // Single group that receives all zoom transforms
     state.mapG = state.mapSvg.append("g").attr("class", "map-root");
 
-    // Ocean sphere
+    // Ocean sphere — filled with the radial gradient
     state.mapG.append("path")
       .datum({ type: "Sphere" })
       .attr("class", "sphere")
-      .attr("d", state.pathGen);
+      .attr("d", state.pathGen)
+      .attr("fill", "url(#ocean-gradient)");
 
     // Lat/lon grid
     state.mapG.append("path")
@@ -341,11 +374,11 @@
 
   function countryFill(d) {
     var code = d.id;
-    if (!code) return "#21262d";
+    if (!code) return "#131f2e";
     var row = state.byCodeYear[code + "_" + state.year];
-    if (!row) return "#21262d";
+    if (!row) return "#131f2e";
     var val = row[state.metric];
-    if (val == null) return "#21262d";
+    if (val == null) return "#131f2e";
     return state.colorScale(val);
   }
 
@@ -683,13 +716,13 @@
       var maxAbs = Math.max(Math.abs(minVal), Math.abs(maxVal));
       lowEl.textContent  = "−" + window.formatNum(maxAbs);
       highEl.textContent = "+" + window.formatNum(maxAbs);
-      gradEl.style.background = "linear-gradient(to right, #ef5350, #fff, #1565c0)";
+      gradEl.style.background = "linear-gradient(to right, #9b1717, #1a2635, #1565c0)";
     } else {
       lowEl.textContent  = "0";
       highEl.textContent = window.formatNum(maxVal);
       gradEl.style.background = state.metric === "births"
-        ? "linear-gradient(to right, #e3f2fd, #1565c0)"
-        : "linear-gradient(to right, #ffebee, #b71c1c)";
+        ? "linear-gradient(to right, #0b1e30, #4fc3f7)"
+        : "linear-gradient(to right, #1c080c, #ef5350)";
     }
   }
 

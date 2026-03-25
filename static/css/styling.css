@@ -1143,36 +1143,53 @@ body.viz-body main {
 
 /* Country paths drawn by D3 */
 .country-path {
-  stroke: #30363d;
-  stroke-width: 0.4px;
+  /* Subtle blue-gray border — barely-there at world zoom */
+  stroke: rgba(70, 120, 175, 0.22);
+  stroke-width: 0.3px;
   cursor: pointer;
-  transition: stroke-width var(--t-fast), stroke var(--t-fast);
+  transition: stroke var(--t-fast), stroke-width var(--t-fast), filter var(--t-fast);
 }
 .country-path:hover {
-  stroke: #e6edf3;
-  stroke-width: 1px;
+  stroke: rgba(130, 195, 240, 0.65);
+  stroke-width: 0.7px;
+  filter: brightness(1.20);
 }
 .country-path.selected {
   stroke: var(--color-primary);
   stroke-width: 2px;
+  /* Luminous glow to make selection feel premium */
+  filter: drop-shadow(0 0 5px rgba(79, 195, 247, 0.48));
+}
+.country-path.selected:hover {
+  filter: drop-shadow(0 0 7px rgba(79, 195, 247, 0.65));
 }
 .country-path.no-data {
-  fill: #21262d;
+  /* Dark blue-gray — clearly separate from the ocean but harmonious */
+  fill: #131f2e;
   cursor: default;
+}
+.country-path.no-data:hover {
+  filter: none;
+  stroke: rgba(70, 120, 175, 0.22);
+  stroke-width: 0.3px;
 }
 .country-path.highlighted {
   stroke: var(--color-primary);
-  stroke-width: 1.5px;
+  stroke-width: 1.2px;
+  filter: drop-shadow(0 0 3px rgba(79, 195, 247, 0.35));
 }
 
-/* Globe outline / graticule */
+/* Graticule — very faint navy grid lines for depth */
 .graticule {
   fill: none;
-  stroke: var(--color-border-soft);
+  stroke: rgba(30, 75, 140, 0.10);
   stroke-width: 0.3px;
 }
+
+/* Sphere fill is set inline via the SVG radial gradient in JS;
+   this rule provides a solid fallback for non-gradient contexts. */
 .sphere {
-  fill: #0a0f14;
+  fill: #091929;
 }
 
 
@@ -1296,7 +1313,7 @@ body.viz-body main {
   flex: 1;
   height: 8px;
   border-radius: 4px;
-  background: linear-gradient(to right, #ef5350, #fff, #4fc3f7);
+  background: linear-gradient(to right, #0b1e30, #4fc3f7);
 }
 
 
@@ -1446,26 +1463,28 @@ body.viz-body main {
    ================================================================ */
 
 .country-label {
-  fill: var(--color-text);
+  /* Muted light — readable without competing with the data */
+  fill: rgba(185, 210, 230, 0.70);
   font-size: 10px;
   font-family: var(--font-sans);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-normal);
   text-anchor: middle;
   dominant-baseline: middle;
   pointer-events: none;
-  /* Dark outline behind text for contrast against all map colours */
+  letter-spacing: 0.02em;
+  /* Thin navy halo — avoids the chunky capsule effect */
   paint-order: stroke;
-  stroke: rgba(13, 17, 23, 0.75);
-  stroke-width: 3px;
+  stroke: rgba(6, 15, 26, 0.55);
+  stroke-width: 1.8px;
   stroke-linejoin: round;
 }
 
-/* Selected country label is highlighted in the brand colour */
+/* Selected country label — clear accent, minimal halo */
 .country-label.label-selected {
   fill: var(--color-primary);
-  font-weight: var(--weight-bold);
-  stroke: rgba(13, 17, 23, 0.9);
-  stroke-width: 4px;
+  font-weight: var(--weight-semi);
+  stroke: rgba(6, 15, 26, 0.70);
+  stroke-width: 2px;
 }
 
 
