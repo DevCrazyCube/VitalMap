@@ -43,7 +43,6 @@ VitalMap/
 ├── requirements.txt               Python dependencies
 ├── .gitignore
 ├── README.md
-├── CLAUDE.md                      Development log (AI-assisted)
 ├── submissions/                   Contact form messages (gitignored)
 │   └── messages.json
 ├── templates/
