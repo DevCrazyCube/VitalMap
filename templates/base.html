@@ -16,14 +16,14 @@
   <!-- Navigation -->
   <nav class="navbar">
     <a class="navbar__logo" href="{{ url_for('home') }}">
-      <span class="navbar__logo-mark">●</span> VitalMap
+      <span class="navbar__logo-mark">●</span> Global Demographics
     </a>
     <ul class="navbar__links">
       <li><a href="{{ url_for('home') }}"          class="{% if page == 'home' %}active{% endif %}">Home</a></li>
       <li><a href="{{ url_for('visualization') }}" class="{% if page == 'visualization' %}active{% endif %}">Visualization</a></li>
       <li><a href="{{ url_for('contact') }}"       class="{% if page == 'contact' %}active{% endif %}">Contact</a></li>
     </ul>
-    <button class="navbar__cta" onclick="location.href='{{ url_for('visualization') }}'">Open the Map</button>
+    <button class="navbar__cta" onclick="location.href='{{ url_for('visualization') }}'">Open Map</button>
   </nav>
 
   <!-- Flash messages (success / error from Flask) -->

@@ -15,7 +15,7 @@
     metric:        "births",
     selectedCode:  null,
     zoomLevel:     1,
-    allData:       [],      // full dataset from /api/data
+    allData:       [],      // filtered, real mapped-country rows only
     byCodeYear:    {},      // "AFG_1990" → row object
     byCode:        {},      // "AFG"      → sorted array of rows
     countryNames:  {},      // "AFG"      → "Afghanistan"
@@ -26,13 +26,12 @@
     projection:    null,
     pathGen:       null,
     zoomBehavior:  null,
-    trendSvg:      null
+    trendSvg:      null,
+    trendResizeObserver: null
   };
 
   // ================================================================
   // DARK-ADAPTED COLOUR INTERPOLATORS
-  // Designed for a deep navy ocean background — low values blend into
-  // the map base; high values read as luminous accent colours.
   // ================================================================
 
   // Births: dark navy → luminous cyan-blue
@@ -46,7 +45,6 @@
   };
 
   // Natural growth: deep red → dark slate → steel blue
-  // t=0 maps to negative max, t=0.5 to zero, t=1 to positive max
   var _interpGrowth = function (t) {
     if (t < 0.5) return d3.interpolateRgb("#9b1717", "#1a2635")(t * 2);
     return d3.interpolateRgb("#1a2635", "#1565c0")((t - 0.5) * 2);
@@ -81,18 +79,23 @@
   // ================================================================
   document.addEventListener("DOMContentLoaded", function () {
     setupControls();
+    setupTrendResizeHandle();
     Promise.all([fetchData(), fetchGeo()])
       .then(function (results) {
-        processData(results[0]);
         processGeo(results[1]);
+        processData(results[0]);   // after geo so we can filter to mapped countries
         hideLoading();
         drawMap();
         updateLegend();
+        setupTrendResizeObserver();
       })
       .catch(function (err) {
         console.error("VitalMap load error:", err);
-        document.getElementById("map-loading").innerHTML =
-          '<span style="color:#ef5350">Failed to load map data. Please refresh.</span>';
+        var loadingEl = document.getElementById("map-loading");
+        if (loadingEl) {
+          loadingEl.innerHTML =
+            '<span style="color:#ef5350">Failed to load map data. Please refresh.</span>';
+        }
       });
   });
 
@@ -108,27 +111,38 @@
     return fetch("/static/data/world.geojson").then(function (r) { return r.json(); });
   }
 
+  function processGeo(geojson) {
+    state.geoFeatures = geojson.features;
+
+    geojson.features.forEach(function (f) {
+      var code = f.id || (f.properties && f.properties.iso_a3);
+      var name = f.properties && (f.properties.name || f.properties.NAME);
+
+      if (code && name) state.countryNames[code] = name;
+
+      // Pre-compute spherical area (steradians) for label-visibility decisions
+      f._area = d3.geoArea(f);
+    });
+  }
+
   function processData(rows) {
-    state.allData = rows;
-    rows.forEach(function (row) {
+    // Only keep rows that correspond to actual mapped countries
+    state.allData = rows.filter(function (row) {
+      return row.code && state.countryNames[row.code];
+    });
+
+    state.byCodeYear = {};
+    state.byCode = {};
+
+    state.allData.forEach(function (row) {
       state.byCodeYear[row.code + "_" + row.year] = row;
       if (!state.byCode[row.code]) state.byCode[row.code] = [];
       state.byCode[row.code].push(row);
     });
+
     // Pre-sort each country's array by year
     Object.keys(state.byCode).forEach(function (code) {
       state.byCode[code].sort(function (a, b) { return a.year - b.year; });
-    });
-  }
-
-  function processGeo(geojson) {
-    state.geoFeatures = geojson.features;
-    geojson.features.forEach(function (f) {
-      var code = f.id || (f.properties && f.properties.iso_a3);
-      var name = f.properties && (f.properties.name || f.properties.NAME);
-      if (code && name) state.countryNames[code] = name;
-      // Pre-compute spherical area (steradians) for label-visibility decisions
-      f._area = d3.geoArea(f);
     });
   }
 
@@ -140,6 +154,47 @@
   // ================================================================
   // CONTROLS
   // ================================================================
+
+  // bottom panel resize handler
+  function setupTrendResizeHandle() {
+  var panel = document.getElementById("trend-panel");
+  var handle = document.getElementById("trend-resize-handle");
+  if (!panel || !handle) return;
+
+  var startY = 0;
+  var startHeight = 0;
+  var dragging = false;
+
+  handle.addEventListener("mousedown", function (e) {
+    e.preventDefault();
+    dragging = true;
+    startY = e.clientY;
+    startHeight = panel.offsetHeight;
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "ns-resize";
+  });
+
+  window.addEventListener("mousemove", function (e) {
+    if (!dragging) return;
+
+    var delta = startY - e.clientY;
+    var nextHeight = startHeight + delta;
+
+    nextHeight = Math.max(120, Math.min(420, nextHeight));
+    panel.style.height = nextHeight + "px";
+  });
+
+  window.addEventListener("mouseup", function () {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.userSelect = "";
+    document.body.style.cursor = "";
+
+    if (state.selectedCode) {
+      drawTrendChart(state.selectedCode);
+    }
+  });
+}
 
   function setupControls() {
     var yearSlider   = document.getElementById("year-slider");
@@ -153,71 +208,95 @@
     var detailsClose = document.getElementById("details-close");
 
     // Year slider
-    yearSlider.addEventListener("input", function () {
-      state.year = parseInt(this.value);
-      yearDisplay.textContent = state.year;
-      if (yearBadge) yearBadge.textContent = state.year;
-      updateMap();
-      if (state.selectedCode) {
-        updateDetails(state.selectedCode);
-        updateYearMarker();
-      }
-    });
+    if (yearSlider) {
+      yearSlider.addEventListener("input", function () {
+        state.year = parseInt(this.value, 10);
+        if (yearDisplay) yearDisplay.textContent = state.year;
+        if (yearBadge) yearBadge.textContent = state.year;
+
+        updateMap();
+        updateLegend();
+
+        if (state.selectedCode) {
+          updateDetails(state.selectedCode);
+          updateYearMarker();
+        }
+      });
+    }
 
     // Metric select
-    metricSelect.addEventListener("change", function () {
-      state.metric = this.value;
-      document.getElementById("metric-hint").textContent = METRIC_META[state.metric].hint;
-      updateMap();
-      updateLegend();
-    });
+    if (metricSelect) {
+      metricSelect.addEventListener("change", function () {
+        state.metric = this.value;
+        var hintEl = document.getElementById("metric-hint");
+        if (hintEl) hintEl.textContent = METRIC_META[state.metric].hint;
+
+        updateMap();
+        updateLegend();
+      });
+    }
 
     // Search input
-    searchInput.addEventListener("input", function () {
-      var q = this.value.trim().toLowerCase();
-      if (q.length < 2) {
-        hideSuggestions();
-        searchClear.classList.remove("visible");
-        return;
-      }
-      searchClear.classList.add("visible");
-      var matches = state.geoFeatures
-        .filter(function (f) {
-          return ((f.properties && f.properties.name) || "").toLowerCase().includes(q);
-        })
-        .slice(0, 8);
-
-      if (!matches.length) { hideSuggestions(); return; }
-
-      suggestions.innerHTML = "";
-      matches.forEach(function (f) {
-        var name = f.properties.name;
-        var code = f.id;
-        var item = document.createElement("div");
-        item.className   = "suggestion-item";
-        item.textContent = name;
-        item.addEventListener("click", function () {
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        var q = this.value.trim().toLowerCase();
+        if (q.length < 2) {
           hideSuggestions();
-          searchInput.value = name;
-          searchClear.classList.add("visible");
-          panToCountry(code);
-          selectCountry(code);
-        });
-        suggestions.appendChild(item);
+          if (searchClear) searchClear.classList.remove("visible");
+          return;
+        }
+
+        if (searchClear) searchClear.classList.add("visible");
+
+        var matches = state.geoFeatures
+          .filter(function (f) {
+            return ((f.properties && f.properties.name) || "").toLowerCase().includes(q);
+          })
+          .slice(0, 8);
+
+        if (!matches.length) {
+          hideSuggestions();
+          return;
+        }
+
+        if (suggestions) {
+          suggestions.innerHTML = "";
+
+          matches.forEach(function (f) {
+            var name = f.properties.name;
+            var code = f.id;
+            var item = document.createElement("div");
+            item.className   = "suggestion-item";
+            item.textContent = name;
+
+            item.addEventListener("click", function () {
+              hideSuggestions();
+              searchInput.value = name;
+              if (searchClear) searchClear.classList.add("visible");
+              panToCountry(code);
+              selectCountry(code);
+            });
+
+            suggestions.appendChild(item);
+          });
+
+          suggestions.classList.add("visible");
+        }
       });
-      suggestions.classList.add("visible");
-    });
 
-    searchInput.addEventListener("blur", function () {
-      setTimeout(hideSuggestions, 200);
-    });
+      searchInput.addEventListener("blur", function () {
+        setTimeout(hideSuggestions, 200);
+      });
+    }
 
-    searchClear.addEventListener("click", function () {
-      searchInput.value = "";
-      searchClear.classList.remove("visible");
-      hideSuggestions();
-      clearHighlight();
-    });
+    if (searchClear) {
+      searchClear.addEventListener("click", function () {
+        if (searchInput) searchInput.value = "";
+        searchClear.classList.remove("visible");
+        hideSuggestions();
+        clearHighlight();
+      });
+    }
 
     // Reset view
     if (resetBtn) {
@@ -231,7 +310,8 @@
     // Close details card
     if (detailsClose) {
       detailsClose.addEventListener("click", function () {
-        document.getElementById("details-card").style.display = "none";
+        var card = document.getElementById("details-card");
+        if (card) card.style.display = "none";
         d3.selectAll(".country-path").classed("selected", false);
         d3.selectAll(".country-label").classed("label-selected", false);
         state.selectedCode = null;
@@ -239,7 +319,7 @@
     }
 
     function hideSuggestions() {
-      suggestions.classList.remove("visible");
+      if (suggestions) suggestions.classList.remove("visible");
     }
   }
 
@@ -249,6 +329,8 @@
 
   function drawMap() {
     var container = document.getElementById("map-container");
+    if (!container) return;
+
     var W = container.clientWidth  || 900;
     var H = container.clientHeight || 480;
 
@@ -258,6 +340,8 @@
       .translate([W / 2, H / 2]);
 
     state.pathGen = d3.geoPath().projection(state.projection);
+
+    d3.select("#map-container svg").remove();
 
     // Root SVG
     state.mapSvg = d3.select("#map-container")
@@ -270,6 +354,7 @@
     var oceanGrad = defs.append("radialGradient")
       .attr("id", "ocean-gradient")
       .attr("cx", "50%").attr("cy", "50%").attr("r", "55%");
+
     oceanGrad.append("stop").attr("offset", "0%")  .attr("stop-color", "#0e2540");
     oceanGrad.append("stop").attr("offset", "55%") .attr("stop-color", "#091929");
     oceanGrad.append("stop").attr("offset", "100%").attr("stop-color", "#060f1a");
@@ -290,7 +375,7 @@
       .attr("class", "graticule")
       .attr("d", state.pathGen);
 
-    // Build colour scale (uses allData fallback before paths exist)
+    // Build colour scale
     state.colorScale = buildColorScale(state.metric);
 
     // Country paths
@@ -298,24 +383,25 @@
       .data(state.geoFeatures)
       .enter()
       .append("path")
-        .attr("class", "country-path")
-        .attr("d", state.pathGen)
-        .attr("data-code", function (d) { return d.id || ""; })
-        .attr("fill", function (d) { return countryFill(d); })
-        .classed("no-data", function (d) {
-          return !d.id || !state.byCodeYear[d.id + "_" + state.year];
-        })
-        .on("mousemove", onMouseMove)
-        .on("mouseleave", onMouseLeave)
-        .on("click", function (event, d) {
-          if (d.id) selectCountry(d.id);
-        });
+      .attr("class", "country-path")
+      .attr("d", state.pathGen)
+      .attr("data-code", function (d) { return d.id || ""; })
+      .attr("fill", function (d) { return countryFill(d); })
+      .classed("no-data", function (d) {
+        return !d.id || !state.byCodeYear[d.id + "_" + state.year];
+      })
+      .on("mousemove", onMouseMove)
+      .on("mouseleave", onMouseLeave)
+      .on("click", function (event, d) {
+        if (d.id) selectCountry(d.id);
+      });
 
-    // Country labels (inside mapG — they transform with the map)
+    // Country labels
     var labelsG = state.mapG.append("g").attr("class", "country-labels");
     state.geoFeatures.forEach(function (f) {
       var centroid = mainCentroid(f, state.pathGen);
       if (!centroid || isNaN(centroid[0]) || isNaN(centroid[1])) return;
+
       labelsG.append("text")
         .datum(f)
         .attr("class", "country-label")
@@ -326,10 +412,7 @@
         .style("display", "none");
     });
 
-    // D3 zoom + pan behaviour.
-    // translateExtent uses the actual projected sphere pixel bounds — this
-    // is the correct anchor: the sphere boundary is what we want to clamp to,
-    // not the full SVG rectangle (which includes empty margin above/below the sphere).
+    // D3 zoom + pan behaviour
     var sBounds = state.pathGen.bounds({ type: "Sphere" });
     state.zoomBehavior = d3.zoom()
       .scaleExtent([1, 10])
@@ -344,17 +427,12 @@
 
     // Redraw on window resize
     window.addEventListener("resize", debounce(function () {
-      var savedCode  = state.selectedCode;
-      var savedZoom  = state.zoomLevel;
-      d3.select("#map-container svg").remove();
-      state.trendSvg = null;
+      var savedCode = state.selectedCode;
       drawMap();
       updateLegend();
+
       if (savedCode) {
         selectCountry(savedCode);
-        d3.selectAll(".country-path")
-          .filter(function (d) { return d.id === savedCode; })
-          .classed("selected", true);
       }
     }, 300));
   }
@@ -370,26 +448,36 @@
       .classed("no-data", function (d) {
         return !d.id || !state.byCodeYear[d.id + "_" + state.year];
       })
-      .transition().duration(300)
+      .transition()
+      .duration(300)
       .attr("fill", function (d) { return countryFill(d); });
   }
 
   function countryFill(d) {
     var code = d.id;
     if (!code) return "#131f2e";
+
     var row = state.byCodeYear[code + "_" + state.year];
     if (!row) return "#131f2e";
+
     var val = row[state.metric];
     if (val == null) return "#131f2e";
+
     return state.colorScale(val);
   }
 
   function buildColorScale(metric) {
-    var meta   = METRIC_META[metric];
+    var meta = METRIC_META[metric];
     var values = [];
 
     state.allData.forEach(function (row) {
-      if (row.year === state.year && row[metric] != null) values.push(row[metric]);
+      if (
+        row.year === state.year &&
+        row[metric] != null &&
+        state.countryNames[row.code]
+      ) {
+        values.push(row[metric]);
+      }
     });
 
     if (!values.length) return function () { return "#21262d"; };
@@ -401,6 +489,7 @@
       var maxAbs = Math.max(Math.abs(minVal), Math.abs(maxVal));
       return d3.scaleDiverging(meta.interpolator).domain([-maxAbs, 0, maxAbs]);
     }
+
     return d3.scaleSequential(meta.interpolator).domain([0, maxVal]);
   }
 
@@ -408,24 +497,17 @@
   // COUNTRY LABELS
   // ================================================================
 
-  // RAF-throttled label update — zoom fires on every animation frame;
-  // we coalesce rapid calls so only one DOM pass runs per rendered frame.
   var _labelRafPending = false;
   function scheduleLabels() {
     if (_labelRafPending) return;
     _labelRafPending = true;
+
     requestAnimationFrame(function () {
       _labelRafPending = false;
       updateLabelVisibility();
     });
   }
 
-  // Show labels based on zoom level and pre-computed spherical area.
-  // d3.geoArea returns steradians — rough reference values:
-  //   Russia ≈ 0.23, Canada ≈ 0.20, USA ≈ 0.12, Australia ≈ 0.13,
-  //   Brazil ≈ 0.09, China ≈ 0.06, India ≈ 0.04, Argentina ≈ 0.03
-  // Font-size counter-scaling is applied only to visible labels — avoids
-  // styling ~250 elements on every zoom tick.
   function updateLabelVisibility() {
     var z        = state.zoomLevel || 1;
     var fontSize = (10 / z) + "px";
@@ -454,19 +536,21 @@
     });
   }
 
-  // For MultiPolygon features (France, Norway, USA, Indonesia, Russia, …)
-  // the naive centroid of the whole feature is pulled off-mainland by distant
-  // territories. Instead, find the polygon ring with the largest spherical
-  // area and return its centroid — that's always the main landmass.
   function mainCentroid(feature, pathGen) {
     if (!feature.geometry) return pathGen.centroid(feature);
     if (feature.geometry.type !== "MultiPolygon") return pathGen.centroid(feature);
-    var best     = null;
+
+    var best = null;
     var bestArea = -1;
+
     feature.geometry.coordinates.forEach(function (polyCoords) {
       var area = d3.geoArea({ type: "Polygon", coordinates: polyCoords });
-      if (area > bestArea) { bestArea = area; best = polyCoords; }
+      if (area > bestArea) {
+        bestArea = area;
+        best = polyCoords;
+      }
     });
+
     if (!best) return pathGen.centroid(feature);
     return pathGen.centroid({ type: "Polygon", coordinates: best });
   }
@@ -478,6 +562,8 @@
   var tooltip = document.getElementById("map-tooltip");
 
   function onMouseMove(event, d) {
+    if (!tooltip) return;
+
     var code = d.id;
     if (!code) return;
 
@@ -490,15 +576,16 @@
     if (row) {
       document.getElementById("tt-births").textContent = window.formatNum(row.births);
       document.getElementById("tt-deaths").textContent = window.formatNum(row.deaths);
+
       var gr   = row.natural_growth;
       var grEl = document.getElementById("tt-growth");
       grEl.textContent = (gr >= 0 ? "+" : "") + window.formatNum(gr);
       grEl.style.color = gr >= 0 ? "var(--color-growth)" : "var(--color-deaths)";
     } else {
-      document.getElementById("tt-births").textContent  = "No data";
-      document.getElementById("tt-deaths").textContent  = "No data";
-      document.getElementById("tt-growth").textContent  = "No data";
-      document.getElementById("tt-growth").style.color  = "";
+      document.getElementById("tt-births").textContent = "No data";
+      document.getElementById("tt-deaths").textContent = "No data";
+      document.getElementById("tt-growth").textContent = "No data";
+      document.getElementById("tt-growth").style.color = "";
     }
 
     tooltip.style.display = "block";
@@ -506,17 +593,21 @@
   }
 
   function onMouseLeave() {
-    tooltip.style.display = "none";
+    if (tooltip) tooltip.style.display = "none";
   }
 
   function positionTooltip(event) {
+    if (!tooltip) return;
+
     var pad = 14;
     var tw  = tooltip.offsetWidth  || 180;
     var th  = tooltip.offsetHeight || 120;
     var x   = event.clientX + pad;
     var y   = event.clientY + pad;
+
     if (x + tw > window.innerWidth  - pad) x = event.clientX - tw - pad;
     if (y + th > window.innerHeight - pad) y = event.clientY - th - pad;
+
     tooltip.style.left = x + "px";
     tooltip.style.top  = y + "px";
   }
@@ -526,11 +617,9 @@
   // ================================================================
 
   function selectCountry(code) {
-    // Clear old selection state
     d3.selectAll(".country-path").classed("selected", false);
     d3.selectAll(".country-label").classed("label-selected", false);
 
-    // Apply new selection
     d3.selectAll(".country-path")
       .filter(function (d) { return d.id === code; })
       .classed("selected", true);
@@ -541,7 +630,6 @@
     drawTrendChart(code);
   }
 
-  // Pan (without changing zoom) so the chosen country is visible
   function panToCountry(code) {
     var feature = state.geoFeatures.find(function (f) { return f.id === code; });
     if (!feature || !state.mapSvg || !state.zoomBehavior) return;
@@ -554,7 +642,6 @@
     var H = container.clientHeight;
     var k = state.zoomLevel || 1;
 
-    // Translate so the centroid is at the viewport centre
     var tx = W / 2 - centroid[0] * k;
     var ty = H / 2 - centroid[1] * k;
 
@@ -574,7 +661,7 @@
   }
 
   // ================================================================
-  // DETAILS PANEL (floating card)
+  // DETAILS PANEL
   // ================================================================
 
   function updateDetails(code) {
@@ -582,6 +669,8 @@
     var row  = state.byCodeYear[code + "_" + state.year];
 
     var card = document.getElementById("details-card");
+    if (!card) return;
+
     card.style.display = "block";
 
     document.getElementById("detail-country").textContent    = name;
@@ -619,12 +708,17 @@
 
   function drawTrendChart(code) {
     var name    = state.countryNames[code] || code;
-    var records = state.byCode[code];  // already sorted by year
+    var records = state.byCode[code];
 
-    document.getElementById("trend-title").textContent    = name + " — Population Trend";
-    document.getElementById("trend-subtitle").textContent = "1950–2100  ·  estimates then medium projections";
-    document.getElementById("trend-empty").style.display  = "none";
-    document.getElementById("trend-legend").style.display = "flex";
+    var titleEl = document.getElementById("trend-title");
+    var subEl   = document.getElementById("trend-subtitle");
+    var emptyEl = document.getElementById("trend-empty");
+    var legendEl = document.getElementById("trend-legend");
+
+    if (titleEl) titleEl.textContent = name + " — Population Trend";
+    if (subEl) subEl.textContent = "1950–2100  ·  estimates then medium projections";
+    if (emptyEl) emptyEl.style.display = "none";
+    if (legendEl) legendEl.style.display = "flex";
 
     if (!records || !records.length) {
       document.getElementById("trend-chart-wrap").innerHTML =
@@ -636,21 +730,24 @@
 
     var wrap   = document.getElementById("trend-chart-wrap");
     var W      = wrap.clientWidth || 700;
-    var H      = 120;                              // reduced height
+    var wrapHeight = wrap.clientHeight || 120;
+    var H      = Math.max(120, wrapHeight);
+
     var margin = { top: 10, right: 16, bottom: 28, left: 54 };
     var iW     = W - margin.left - margin.right;
     var iH     = H - margin.top  - margin.bottom;
 
     var svg = d3.select("#trend-chart-wrap")
       .append("svg")
-        .attr("width",  W)
-        .attr("height", H);
+      .attr("width",  W)
+      .attr("height", H);
 
     var g = svg.append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    // Scales
-    var xScale = d3.scaleLinear().domain([1950, 2100]).range([0, iW]);
+    var xScale = d3.scaleLinear()
+      .domain([1950, 2100])
+      .range([0, iW]);
 
     var allVals = records.flatMap(function (r) { return [r.births, r.deaths]; });
     var yScale  = d3.scaleLinear()
@@ -658,7 +755,6 @@
       .nice()
       .range([iH, 0]);
 
-    // Axes — minimal ticks for the compact height
     g.append("g")
       .attr("class", "trend-axis")
       .attr("transform", "translate(0," + iH + ")")
@@ -678,7 +774,6 @@
           .tickSize(3)
       );
 
-    // Line helpers
     function makeLine(yAccessor, definedFn) {
       return d3.line()
         .x(function (r) { return xScale(r.year); })
@@ -690,10 +785,12 @@
       function (r) { return r.births; },
       function (r) { return r.births != null; }
     );
+
     var lineDeaths = makeLine(
       function (r) { return r.deaths; },
       function (r) { return r.deaths != null; }
     );
+
     var lineGrowth = makeLine(
       function (r) { return Math.max(0, r.natural_growth); },
       function (r) { return r.natural_growth != null; }
@@ -703,7 +800,6 @@
     g.append("path").datum(records).attr("class", "trend-line-deaths").attr("d", lineDeaths);
     g.append("path").datum(records).attr("class", "trend-line-growth").attr("d", lineGrowth);
 
-    // Year marker
     state.trendSvg = { g: g, xScale: xScale, iH: iH };
     drawYearMarker(g, xScale, iH, state.year);
   }
@@ -721,6 +817,23 @@
     drawYearMarker(state.trendSvg.g, state.trendSvg.xScale, state.trendSvg.iH, state.year);
   }
 
+  function setupTrendResizeObserver() {
+    var trendPanel = document.getElementById("trend-panel");
+    if (!trendPanel || !window.ResizeObserver) return;
+
+    if (state.trendResizeObserver) {
+      state.trendResizeObserver.disconnect();
+    }
+
+    state.trendResizeObserver = new ResizeObserver(function () {
+      if (state.selectedCode) {
+        drawTrendChart(state.selectedCode);
+      }
+    });
+
+    state.trendResizeObserver.observe(trendPanel);
+  }
+
   // ================================================================
   // LEGEND
   // ================================================================
@@ -732,12 +845,19 @@
     var highEl  = document.getElementById("legend-high");
     var titleEl = document.getElementById("legend-title");
 
-    titleEl.textContent = meta.label;
+    if (titleEl) titleEl.textContent = meta.label;
 
     var values = [];
     state.allData.forEach(function (row) {
-      if (row.year === state.year && row[state.metric] != null) values.push(row[state.metric]);
+      if (
+        row.year === state.year &&
+        row[state.metric] != null &&
+        state.countryNames[row.code]
+      ) {
+        values.push(row[state.metric]);
+      }
     });
+
     if (!values.length) return;
 
     var minVal = d3.min(values);
@@ -745,15 +865,17 @@
 
     if (meta.diverging) {
       var maxAbs = Math.max(Math.abs(minVal), Math.abs(maxVal));
-      lowEl.textContent  = "−" + window.formatNum(maxAbs);
-      highEl.textContent = "+" + window.formatNum(maxAbs);
-      gradEl.style.background = "linear-gradient(to right, #9b1717, #1a2635, #1565c0)";
+      if (lowEl) lowEl.textContent  = "−" + window.formatNum(maxAbs);
+      if (highEl) highEl.textContent = "+" + window.formatNum(maxAbs);
+      if (gradEl) gradEl.style.background = "linear-gradient(to right, #9b1717, #1a2635, #1565c0)";
     } else {
-      lowEl.textContent  = "0";
-      highEl.textContent = window.formatNum(maxVal);
-      gradEl.style.background = state.metric === "births"
-        ? "linear-gradient(to right, #0b1e30, #4fc3f7)"
-        : "linear-gradient(to right, #1c080c, #ef5350)";
+      if (lowEl) lowEl.textContent = "0";
+      if (highEl) highEl.textContent = window.formatNum(maxVal);
+      if (gradEl) {
+        gradEl.style.background = state.metric === "births"
+          ? "linear-gradient(to right, #0b1e30, #4fc3f7)"
+          : "linear-gradient(to right, #1c080c, #ef5350)";
+      }
     }
   }
 

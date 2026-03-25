@@ -1252,10 +1252,13 @@ body.viz-body main {
 .tt-growth { color: var(--color-growth);  }
 
 
-/* --- Trend Panel (compact bottom strip) --- */
+/* --- Trend Panel (bottom strip with real drag-resize) --- */
 .trend-panel {
+  position: relative;
   flex-shrink: 0;
-  height: 158px;
+  height: 200px;
+  min-height: 180px;
+  max-height: 420px;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   padding: var(--space-3) var(--space-5);
@@ -1265,12 +1268,40 @@ body.viz-body main {
   overflow: hidden;
 }
 
+.trend-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  cursor: ns-resize;
+  z-index: 5;
+}
+
+.trend-resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.14);
+  transition: background var(--t-base) var(--ease-out);
+}
+
+.trend-resize-handle:hover::before {
+  background: rgba(79, 195, 247, 0.65);
+}
+
 .trend-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
   flex-shrink: 0;
+  margin-top: 8px; /* space below handle */
 }
 
 .trend-title {
@@ -1304,7 +1335,6 @@ body.viz-body main {
   padding: var(--space-4);
 }
 
-/* D3-generated trend SVG */
 .trend-chart-wrap svg {
   width: 100%;
   display: block;
@@ -1325,7 +1355,9 @@ body.viz-body main {
   fill: var(--color-text-faint);
   font-size: 10px;
 }
-.trend-axis line, .trend-axis path {
+
+.trend-axis line,
+.trend-axis path {
   stroke: var(--color-border);
 }
 
@@ -1345,7 +1377,6 @@ body.viz-body main {
 .trend-legend__item--births { color: var(--color-births); }
 .trend-legend__item--deaths { color: var(--color-deaths); }
 .trend-legend__item--growth { color: var(--color-growth); }
-
 
 /* ================================================================
    COUNTRY LABELS (SVG text elements inside the D3 map group)
