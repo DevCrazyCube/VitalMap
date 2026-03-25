@@ -417,11 +417,13 @@ ul, ol { list-style: none; }
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;        /* sits above hero-map-bg during crossfade */
-  opacity: 0;        /* GSAP fades in, then back out */
+  z-index: 1;        /* sits above hero-map-bg during zoom */
+  opacity: 0;        /* GSAP fades in, zooms, then back out */
   display: flex;
   align-items: center;
   justify-content: center;
+  transform-origin: 50% 50%;           /* explicit — ensures GSAP scale from viewport centre */
+  will-change: transform, opacity, filter;
 }
 
 .hero__globe-svg {
@@ -437,7 +439,8 @@ ul, ol { list-style: none; }
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 0; /* GSAP crossfades this in after globe exits */
+  opacity: 0;         /* GSAP bleeds this in during the globe zoom */
+  will-change: opacity;
 }
 
 .hero__map-svg {

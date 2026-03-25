@@ -639,6 +639,50 @@ structural and visual approach.
 
 ---
 
+### 2026-03-25 — Globe zoom-to-map transition pass
+
+**Problem addressed:** The previous globe intro was a decorative spinner with a plain crossfade.
+Globe appeared, rotated, then faded out separately as the flat map faded in — two independent
+elements, no visual connection between them. The goal was a dimensional transition: the globe
+zooms toward the camera, its ocean floods the viewport, the flat map resolves through that
+surface, and the map is established as the environment the text enters against.
+
+**Core mechanism**
+- GSAP `scale: 4.0` on `#hero-globe-bg` (a viewport-sized, flex-centred container)
+- At scale 4.0 a ~520px globe SVG becomes ~2080px — wider than any common display
+- `.hero { overflow: hidden }` clips the expanding globe at the hero boundary
+- The globe's dark navy ocean edge (`#040d18`) nearly matches the page background (`#0d1117`)
+- The flat map underneath (also dark navy) bleeds through during the zoom — continuous surface
+- The viewer perceives: "we zoomed into the globe — this is now the interface"
+
+**D3 timer restructure**
+- Timer was previously started inside `d3.json().then()` — delayed 50–300ms by GeoJSON fetch
+- Restructured: timer starts synchronously after sphere+graticule are drawn
+- `var countryPaths = null` in outer closure — timer checks `if (countryPaths)` on each tick
+- Countries added inside `.then()` — running timer picks them up on next tick, no restart
+- Result: ocean orb is visibly rotating from the first frame of the GSAP fade-in
+
+**New GSAP hero timeline (absolute time positions)**
+- 0.10s: globe fades in (0.6s, power2.out)
+- 1.15s: zoom push begins (scale 1→4.0, 0.9s, **power2.in** — slow-start acceleration)
+- 1.15s: motion blur builds in parallel (filter blur 0→8px, 0.9s, power2.in — sells camera speed)
+- 1.40s: flat map bleeds through dark ocean surface (opacity 0→0.9, 0.6s, power2.inOut)
+- 1.85s: globe exits while still zooming (opacity 1→0, 0.5s); onComplete stops timer + resets scale/blur
+- 2.10s: map settles to full opacity (0.3s)
+- 2.15s–3.20s: text cascade (eyebrow, title, sub, actions, scroll hint)
+- Total settle: ~3.9s
+
+**CSS additions**
+- `#hero-globe-bg`: `transform-origin: 50% 50%` (explicit), `will-change: transform, opacity, filter`
+- `#hero-map-bg`: `will-change: opacity`
+
+**Files changed in this pass**
+- `static/js/home.js` — D3 timer restructure in `drawHeroGlobe()`; new GSAP hero timeline
+- `static/css/styling.css` — `will-change` and `transform-origin` on `#hero-globe-bg`/`#hero-map-bg`
+- `CLAUDE.md` — updated
+
+---
+
 ### 2026-03-25 — Hero and landing polish pass (authored identity, globe intro)
 
 **Problem addressed:** Landing page felt like "premium AI template slop" — system fonts, uppercase

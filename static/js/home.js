@@ -1,25 +1,30 @@
 /*
  * VitalMap — home.js
  * GSAP + ScrollTrigger animations for the Home landing page.
- * Hero intro: D3 geoOrthographic globe resolves in → rotates briefly →
- *             crossfades to geoNaturalEarth1 flat map → text cascade.
- * Also renders a gateway section map.
- * Only loaded on the home page.
+ *
+ * Hero intro sequence:
+ *   1. D3 geoOrthographic globe resolves in and rotates (~1s)
+ *   2. GSAP scale pushes the globe toward the camera (zoom — ~0.9s)
+ *      Motion blur builds; flat map bleeds through the dark ocean surface
+ *   3. Globe exits; map fully resolves
+ *   4. Text cascade enters
+ *
+ * The transition communicates: "we zoomed into the globe — this is the interface."
  */
 
 (function () {
   "use strict";
 
   document.addEventListener("DOMContentLoaded", function () {
-    // Both layers start drawing immediately (async GeoJSON fetch).
-    // Globe is visible first; flat map is hidden (opacity:0 in CSS)
-    // until the GSAP crossfade brings it in.
+    // Both layers draw immediately (async GeoJSON fetch).
+    // Globe is visible first; flat map stays hidden (opacity:0 in CSS)
+    // until the GSAP zoom bleeds it through.
     var globeContainer = drawHeroGlobe();
     drawHeroMap();
     drawGatewayMap();
 
     if (typeof gsap === "undefined" || typeof ScrollTrigger === "undefined") {
-      // Graceful fallback: reveal everything immediately if GSAP fails to load
+      // Graceful fallback — reveal everything if GSAP fails to load
       var els = [
         "#hero-globe-bg", "#hero-map-bg", "#hero-eyebrow",
         "#hero-title", "#hero-sub", "#hero-actions", "#hero-scroll"
@@ -34,89 +39,111 @@
 
     // ── HERO INTRO SEQUENCE ────────────────────────────────────────────────
     //
-    // All text elements start opacity:0 in CSS.
-    // Set their starting y-offsets here so GSAP can animate them to y:0.
+    // Initial state for all animated elements:
+    gsap.set("#hero-globe-bg", { scale: 1, filter: "blur(0px)" });
+    gsap.set("#hero-eyebrow",  { y: 20 });
+    gsap.set("#hero-title",    { y: 30 });
+    gsap.set("#hero-sub",      { y: 20 });
+    gsap.set("#hero-actions",  { y: 16 });
+    gsap.set("#hero-scroll",   { y: 0 });
 
-    gsap.set("#hero-eyebrow", { y: 20 });
-    gsap.set("#hero-title",   { y: 30 });
-    gsap.set("#hero-sub",     { y: 20 });
-    gsap.set("#hero-actions", { y: 16 });
-    gsap.set("#hero-scroll",  { y: 0 });
-
-    // Timeline uses absolute time positions (numeric second argument to .to())
-    // so beats are independent of each other's duration.
+    // All timeline positions are absolute seconds (numeric second argument).
+    // This makes each beat independent — changing one duration does not shift others.
     //
     // Beat schedule:
-    //   0.10s — globe fades in
-    //   0.10–1.50s — globe rotates (D3 timer, runs independently)
-    //   1.30s — globe fades out AND flat map fades in (true crossfade)
-    //   1.70s — eyebrow enters
-    //   1.95s — title enters
-    //   2.30s — sub enters
-    //   2.55s — actions enter
-    //   2.75s — scroll hint enters
+    //   0.10s — globe fades in; D3 rotation already running
+    //   1.15s — zoom push begins (scale 1 → 4.0, power2.in — accelerating camera)
+    //   1.15s — motion blur builds alongside zoom (blur 0 → 8px)
+    //   1.40s — flat map bleeds through the expanding ocean surface
+    //   1.85s — globe fades out while still zooming; onComplete stops timer + resets
+    //   2.10s — map settles to full opacity
+    //   2.15s — text cascade begins
 
     var heroTl = gsap.timeline();
 
     heroTl
-      // Globe resolves into view
+      // Beat 1 — globe appears
       .to("#hero-globe-bg", {
         opacity: 1,
         duration: 0.6,
-        delay: 0.1,
         ease: "power2.out"
-      })
+      }, 0.1)
 
-      // Globe fades out — crossfade with flat map
+      // Beat 2a — zoom push: scale outward from viewport centre
+      // power2.in = slow start accelerating — reads as camera gaining speed toward globe
+      .to("#hero-globe-bg", {
+        scale: 4.0,
+        duration: 0.9,
+        ease: "power2.in"
+      }, 1.15)
+
+      // Beat 2b — motion blur builds in parallel with zoom (sells the speed)
+      .to("#hero-globe-bg", {
+        filter: "blur(8px)",
+        duration: 0.9,
+        ease: "power2.in"
+      }, 1.15)
+
+      // Beat 3 — flat map bleeds through the dark ocean surface
+      // Starts 0.25s into the zoom (globe still small at scale ~1.35 — just cracking open)
+      .to("#hero-map-bg", {
+        opacity: 0.9,
+        duration: 0.6,
+        ease: "power2.inOut"
+      }, 1.40)
+
+      // Beat 4 — globe exits while still zooming (it "passes the camera")
       .to("#hero-globe-bg", {
         opacity: 0,
-        duration: 0.8,
-        ease: "power2.inOut",
+        duration: 0.5,
+        ease: "power2.out",
         onComplete: function () {
-          // Stop D3 rotation timer once the globe is invisible to free CPU
+          // Stop D3 rotation timer — frees CPU before text cascade
           if (globeContainer && globeContainer._d3timer) {
             globeContainer._d3timer.stop();
           }
+          // Reset scale + filter so the invisible element doesn't occupy GPU paint area
+          gsap.set("#hero-globe-bg", { scale: 1, filter: "blur(0px)" });
         }
-      }, 1.3)
+      }, 1.85)
 
-      // Flat map fades in at the same moment (true crossfade)
+      // Beat 5 — map fully resolves
       .to("#hero-map-bg", {
         opacity: 1,
-        duration: 0.8,
-        ease: "power2.inOut"
-      }, 1.3)
+        duration: 0.3,
+        ease: "power1.out"
+      }, 2.10)
 
-      // Text cascade — each using power3.out, title uses power4.out for weight
+      // Text cascade — power4.out on title for display-weight deceleration
       .to("#hero-eyebrow", {
         opacity: 1, y: 0,
         duration: 0.6,
         ease: "power3.out"
-      }, 1.7)
+      }, 2.15)
 
       .to("#hero-title", {
         opacity: 1, y: 0,
         duration: 0.85,
         ease: "power4.out"
-      }, 1.95)
+      }, 2.40)
 
       .to("#hero-sub", {
         opacity: 1, y: 0,
         duration: 0.65,
         ease: "power3.out"
-      }, 2.3)
+      }, 2.75)
 
       .to("#hero-actions", {
         opacity: 1, y: 0,
         duration: 0.55,
         ease: "power3.out"
-      }, 2.55)
+      }, 3.00)
 
       .to("#hero-scroll", {
         opacity: 1,
         duration: 0.7,
         ease: "power2.out"
-      }, 2.75);
+      }, 3.20);
 
     // ── STORY CHAPTERS ─────────────────────────────────────────────────────
     document.querySelectorAll(".story__chapter").forEach(function (chapter) {
@@ -206,7 +233,11 @@
 
   // ── drawHeroGlobe ──────────────────────────────────────────────────────
   // Draws a D3 geoOrthographic globe in #hero-globe-bg.
-  // Starts a slow-rotation D3 timer immediately after GeoJSON loads.
+  //
+  // D3 timer starts IMMEDIATELY on the sphere + graticule (drawn synchronously),
+  // before the GeoJSON fetch resolves. Countries are added to the running
+  // animation when the fetch completes — no restart needed.
+  //
   // Returns the container element so the GSAP onComplete can stop the timer.
 
   function drawHeroGlobe() {
@@ -230,7 +261,7 @@
       .attr("viewBox", "0 0 " + size + " " + size)
       .attr("aria-hidden", "true");
 
-    // SVG defs: radial gradient for ocean (off-centre highlight for depth)
+    // SVG defs: off-centre radial gradient for ocean depth illusion
     var defs = svg.append("defs");
     var oceanGrad = defs
       .append("radialGradient")
@@ -247,12 +278,13 @@
       .scale(size / 2.15)
       .translate([size / 2, size / 2])
       .clipAngle(90)
-      .rotate([-15, -25, 0]); // start near Europe/Atlantic
+      .rotate([-15, -25, 0]); // start near Europe / Atlantic
 
     var pathGen = d3.geoPath().projection(projection);
 
-    // Ocean sphere
-    svg
+    // ── Synchronous paths (drawn immediately, no GeoJSON needed) ────────
+
+    var spherePath = svg
       .append("path")
       .datum({ type: "Sphere" })
       .attr("fill", "url(#globe-ocean-grad)")
@@ -260,7 +292,6 @@
       .attr("stroke-width", "0.8px")
       .attr("d", pathGen);
 
-    // Graticule
     var gratPath = svg
       .append("path")
       .datum(d3.geoGraticule()())
@@ -269,16 +300,31 @@
       .attr("stroke-width", "0.4px")
       .attr("d", pathGen);
 
-    // Country paths group — populated after GeoJSON loads
     var countriesG = svg.append("g");
 
-    // Sphere outline reference for redraw
-    var spherePath = svg.select("path");
+    // ── Rotation timer — starts NOW, before GeoJSON loads ───────────────
+    // countryPaths starts null; the timer checks on every tick.
+    // When .then() assigns it, the running timer picks it up automatically.
 
+    var countryPaths = null;
+    var yaw = -15;
+
+    var timer = d3.timer(function (elapsed) {
+      yaw = -15 + elapsed * 0.010; // 10 degrees per second
+      projection.rotate([yaw, -25, 0]);
+      spherePath.attr("d", pathGen);
+      gratPath.attr("d", pathGen);
+      if (countryPaths) countryPaths.attr("d", pathGen);
+    });
+
+    // Store on container so GSAP onComplete can stop it
+    container._d3timer = timer;
+
+    // ── Async: add country paths to the running animation ───────────────
     d3
       .json("/static/data/world.geojson")
       .then(function (geojson) {
-        var countryPaths = countriesG
+        countryPaths = countriesG
           .selectAll("path")
           .data(geojson.features)
           .enter()
@@ -287,20 +333,6 @@
           .attr("stroke", "rgba(79, 195, 247, 0.18)")
           .attr("stroke-width", "0.5px")
           .attr("d", pathGen);
-
-        // Slow rotation: 10 degrees per second (0.010 deg/ms)
-        // Starting longitude: -15 deg (Europe visible)
-        var timer = d3.timer(function (elapsed) {
-          var yaw = -15 + elapsed * 0.010;
-          projection.rotate([yaw, -25, 0]);
-
-          spherePath.attr("d", pathGen);
-          gratPath.attr("d", pathGen);
-          countryPaths.attr("d", pathGen);
-        });
-
-        // Store on container so the GSAP onComplete can call .stop()
-        container._d3timer = timer;
       })
       .catch(function () {});
 
@@ -308,7 +340,7 @@
   }
 
   // ── drawHeroMap ────────────────────────────────────────────────────────
-  // Flat geoNaturalEarth1 map for the hero background (existing logic, unchanged).
+  // Flat geoNaturalEarth1 map for the hero background (unchanged).
 
   function drawHeroMap() {
     var bg = document.getElementById("hero-map-bg");
@@ -392,7 +424,7 @@
   }
 
   // ── drawGatewayMap ────────────────────────────────────────────────────
-  // Full-colour D3 map for the gateway section (existing logic, unchanged).
+  // Full-colour D3 map for the gateway section (unchanged).
 
   function drawGatewayMap() {
     var bg    = document.getElementById("gateway-map-bg");
