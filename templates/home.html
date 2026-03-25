@@ -90,26 +90,13 @@
         </a>
       </div>
     </div>
+
+
   </div>
+  
 </section>
-
-
-<!-- ============================================================
-     SECTION 4 — FINALE (closing CTA — spare, centred)
-     ============================================================ -->
-<section class="finale" id="finale">
-  <div class="container">
-    <div class="finale__inner">
-      <h2 class="finale__title">The full story is in the map.</h2>
-      <div class="finale__actions">
-        <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl">Open the Map</a>
-        <a href="{{ url_for('contact') }}" class="btn btn--ghost btn--xl">Contact</a>
-      </div>
-    </div>
-  </div>
-</section>
-
 {% endblock %}
+
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/home.js') }}"></script>
