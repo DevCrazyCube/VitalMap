@@ -5,7 +5,7 @@
 {% block content %}
 
 <!-- ============================================================
-     SECTION 1 — HERO
+     SECTION 1 — HERO (keep as-is)
      ============================================================ -->
 <section class="hero" id="hero">
   <div class="hero__bg">
@@ -35,63 +35,65 @@
 
 
 <!-- ============================================================
-     SECTION 2 — NARRATIVE
-     Three metrics + dataset scale strip.
-     Merges what were previously the story and why sections.
+     SECTION 2 — EDITORIAL
+     Three metrics as large display typography — births, deaths,
+     natural growth. Asymmetric two-column editorial layout.
      ============================================================ -->
-<section class="narrative" id="story">
+<section class="editorial" id="story">
   <div class="container">
-
-    <div class="narrative__metrics">
-      <div class="metric-row metric-row--births reveal-left">
-        <span class="metric-row__name">Births</span>
-        <p class="metric-row__desc">
-          Live births per year. High rates signal young, growing populations —
-          rising demand for schools, housing, and jobs.
-        </p>
-      </div>
-      <div class="metric-row metric-row--deaths reveal-left">
-        <span class="metric-row__name">Deaths</span>
-        <p class="metric-row__desc">
-          Total deaths per year. Rising rates in an ageing society signal
-          healthcare pressure — a challenge across much of Europe and East Asia.
-        </p>
-      </div>
-      <div class="metric-row metric-row--growth reveal-left">
-        <span class="metric-row__name">Natural Growth</span>
-        <p class="metric-row__desc">
-          Births minus deaths. Positive means the population grows from within.
-          Negative — already happening in several countries — means it shrinks
-          without immigration.
-        </p>
-      </div>
+    <div class="editorial__row editorial__row--births">
+      <span class="editorial__name">Births</span>
+      <p class="editorial__desc">
+        Live births per year. High rates signal young, fast-growing populations —
+        rising demand for schools, housing, and jobs across entire economies.
+      </p>
     </div>
-
-    <div class="narrative__scale">
-      <div class="scale-stat">
-        <span class="scale-stat__value">200+</span>
-        <span class="scale-stat__label">Countries &amp; territories</span>
-      </div>
-      <div class="scale-stat">
-        <span class="scale-stat__value">150</span>
-        <span class="scale-stat__label">Years of historical estimates</span>
-      </div>
-      <div class="scale-stat">
-        <span class="scale-stat__value">75</span>
-        <span class="scale-stat__label">Years of UN projections ahead</span>
-      </div>
-      <div class="scale-stat">
-        <span class="scale-stat__value">38K</span>
-        <span class="scale-stat__label">Records in one dataset</span>
-      </div>
+    <div class="editorial__row editorial__row--deaths">
+      <span class="editorial__name">Deaths</span>
+      <p class="editorial__desc">
+        Total deaths per year. Rising mortality in ageing societies signals mounting
+        healthcare pressure — a challenge already unfolding across Europe and East Asia.
+      </p>
     </div>
-
+    <div class="editorial__row editorial__row--growth">
+      <span class="editorial__name">Growth</span>
+      <p class="editorial__desc">
+        Births minus deaths. When the balance tips negative — already happening
+        in dozens of countries — a nation shrinks from within, without immigration.
+      </p>
+    </div>
   </div>
 </section>
 
 
 <!-- ============================================================
-     SECTION 3 — PREVIEW (living D3 map frame — true gateway)
+     DATA STRIP — bare scale numbers, thin bar
+     ============================================================ -->
+<div class="data-strip">
+  <div class="container">
+    <div class="data-strip__inner">
+      <span class="data-strip__stat">
+        <strong>200+</strong> countries &amp; territories
+      </span>
+      <span class="data-strip__sep" aria-hidden="true"></span>
+      <span class="data-strip__stat">
+        <strong>150</strong> years of historical data
+      </span>
+      <span class="data-strip__sep" aria-hidden="true"></span>
+      <span class="data-strip__stat">
+        <strong>75</strong> years of UN projections
+      </span>
+      <span class="data-strip__sep" aria-hidden="true"></span>
+      <span class="data-strip__stat">
+        <strong>38K</strong> records in one dataset
+      </span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     SECTION 3 — PREVIEW (living D3 map — doorway into the viz)
      ============================================================ -->
 <section class="preview" id="preview">
   <div class="preview__map-frame" id="preview-map-frame">
@@ -106,55 +108,34 @@
 
 
 <!-- ============================================================
-     SECTION 4 — FINAL CTA
-     Compact how-to steps at top, strong CTA below.
-     Merges what were previously the howto and cta-final sections.
+     SECTION 4 — ENDING
+     How-to guide (left) + final CTA (right). Asymmetric, editorial.
      ============================================================ -->
-<section class="cta-final" id="cta-final">
-  <div class="cta-final__glow" aria-hidden="true"></div>
+<section class="ending" id="cta-final">
   <div class="container">
+    <div class="ending__inner">
 
-    <div class="cta-final__steps">
-      <div class="cta-step reveal-fade">
-        <span class="cta-step__num">01</span>
-        <div class="cta-step__body">
-          <strong>Choose a year</strong>
-          <span>Drag the slider: 1950–2100</span>
+      <div class="ending__guide">
+        <p class="ending__guide-label">How to use it</p>
+        <ol class="ending__steps">
+          <li>Choose a year — drag the slider from 1950 to 2100</li>
+          <li>Pick a metric — births, deaths, or natural growth</li>
+          <li>Click any country — see exact data and a trend chart</li>
+          <li>Search — jump to any country by name</li>
+        </ol>
+      </div>
+
+      <div class="ending__cta">
+        <h2 class="ending__title">
+          Every country.<br />Every year.<br />All in one map.
+        </h2>
+        <div class="ending__actions">
+          <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl">Open the Map</a>
+          <a href="{{ url_for('contact') }}" class="btn btn--ghost btn--xl">Contact</a>
         </div>
       </div>
-      <div class="cta-step reveal-fade">
-        <span class="cta-step__num">02</span>
-        <div class="cta-step__body">
-          <strong>Pick a metric</strong>
-          <span>Births, deaths, or natural growth</span>
-        </div>
-      </div>
-      <div class="cta-step reveal-fade">
-        <span class="cta-step__num">03</span>
-        <div class="cta-step__body">
-          <strong>Click a country</strong>
-          <span>See data and a full trend chart</span>
-        </div>
-      </div>
-      <div class="cta-step reveal-fade">
-        <span class="cta-step__num">04</span>
-        <div class="cta-step__body">
-          <strong>Search</strong>
-          <span>Jump to any country by name</span>
-        </div>
-      </div>
+
     </div>
-
-    <div class="cta-final__inner reveal-up">
-      <h2 class="cta-final__title">
-        Every country. Every year.<br />All in one map.
-      </h2>
-      <div class="cta-final__actions">
-        <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl">Open the Map</a>
-        <a href="{{ url_for('contact') }}" class="btn btn--ghost btn--xl">Contact</a>
-      </div>
-    </div>
-
   </div>
 </section>
 

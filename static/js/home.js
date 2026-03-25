@@ -17,7 +17,7 @@
 
     gsap.registerPlugin(ScrollTrigger);
 
-    // ── 1. Hero entrance — sequential reveals ──────────────────────────
+    // ── 1. Hero entrance — sequential stagger ──────────────────────────
     var heroTl = gsap.timeline({ defaults: { ease: "power3.out" } });
     heroTl
       .to("#hero-eyebrow", { opacity: 1, y: 0, duration: 0.7, delay: 0.3 })
@@ -26,43 +26,40 @@
       .to("#hero-actions", { opacity: 1, y: 0, duration: 0.6 }, "-=0.35")
       .to("#hero-scroll",  { opacity: 1,        duration: 0.8 }, "-=0.1");
 
-    // ── 2. Narrative — metric rows slide in from left ───────────────────
-    // Each row arrives from the left and reverses back out when scrolling up.
-    // fromTo gives explicit control of both ends so bidirectional works cleanly.
-    gsap.fromTo(".narrative .metric-row",
-      { x: -50, opacity: 0 },
+    // ── 2. Editorial rows — each row reveals with a staggered fade-up ──
+    // Bidirectional: rows retreat when scrolling back up.
+    gsap.fromTo(".editorial__row",
+      { opacity: 0, y: 40 },
       {
-        x: 0, opacity: 1,
-        duration: 0.75, ease: "power3.out", stagger: 0.14,
+        opacity: 1, y: 0,
+        duration: 0.8, ease: "power3.out", stagger: 0.18,
         scrollTrigger: {
-          trigger: ".narrative__metrics",
-          start: "top 80%",
+          trigger: ".editorial",
+          start: "top 78%",
           toggleActions: "play reverse play reverse"
         }
       }
     );
 
-    // ── 3. Narrative — scale stats: scale-up into view ─────────────────
-    // Distinct from the metric rows — back.out gives a subtle overshoot.
-    gsap.fromTo(".scale-stat",
-      { y: 24, opacity: 0, scale: 0.85 },
+    // ── 3. Data strip — numbers spring into view with stagger ──────────
+    gsap.fromTo(".data-strip__stat",
+      { opacity: 0, scale: 0.82, y: 12 },
       {
-        y: 0, opacity: 1, scale: 1,
-        duration: 0.65, ease: "back.out(1.4)", stagger: 0.09,
+        opacity: 1, scale: 1, y: 0,
+        duration: 0.5, ease: "back.out(1.6)", stagger: 0.09,
         scrollTrigger: {
-          trigger: ".narrative__scale",
-          start: "top 86%",
+          trigger: ".data-strip",
+          start: "top 90%",
           toggleActions: "play reverse play reverse"
         }
       }
     );
 
     // ── 4. Preview — parallax on the map background ─────────────────────
-    // Scale the bg element slightly larger than its container so the
-    // parallax translation does not reveal empty space at the edges.
-    gsap.set("#preview-map-bg", { scale: 1.1, y: "-4%" });
+    // Scale up the bg slightly so the y-travel does not expose edges.
+    gsap.set("#preview-map-bg", { scale: 1.12, y: "-5%" });
     gsap.to("#preview-map-bg", {
-      y: "4%",
+      y: "5%",
       ease: "none",
       scrollTrigger: {
         trigger: ".preview",
@@ -72,43 +69,42 @@
       }
     });
 
-    // CTA button reveal over the map — bidirectional.
+    // CTA button reveals from below — bidirectional.
     gsap.fromTo(".preview .reveal-up",
-      { opacity: 0, y: 28 },
+      { opacity: 0, y: 32 },
       {
-        opacity: 1, y: 0, duration: 0.9, ease: "power3.out",
+        opacity: 1, y: 0, duration: 1.0, ease: "power3.out",
         scrollTrigger: {
           trigger: ".preview",
-          start: "top 68%",
+          start: "top 66%",
           toggleActions: "play reverse play reverse"
         }
       }
     );
 
-    // ── 5. CTA steps — staggered fade from below ────────────────────────
-    gsap.fromTo(".cta-step",
-      { y: 18, opacity: 0 },
+    // ── 5. Ending — guide slides from left, CTA slides from right ──────
+    // Two columns arriving from opposite sides — the split feels intentional.
+    gsap.fromTo(".ending__guide",
+      { opacity: 0, x: -36 },
       {
-        y: 0, opacity: 1,
-        duration: 0.6, ease: "power3.out", stagger: 0.09,
+        opacity: 1, x: 0,
+        duration: 0.85, ease: "power3.out",
         scrollTrigger: {
-          trigger: ".cta-final__steps",
-          start: "top 88%",
+          trigger: ".ending__inner",
+          start: "top 80%",
           toggleActions: "play reverse play reverse"
         }
       }
     );
 
-    // ── 6. CTA inner — scale-up reveal ─────────────────────────────────
-    // Scale from slightly smaller + fade up — more impactful than a plain fade.
-    gsap.fromTo(".cta-final__inner",
-      { opacity: 0, y: 30, scale: 0.96 },
+    gsap.fromTo(".ending__cta",
+      { opacity: 0, x: 36 },
       {
-        opacity: 1, y: 0, scale: 1,
-        duration: 1.0, ease: "power3.out",
+        opacity: 1, x: 0,
+        duration: 0.85, ease: "power3.out",
         scrollTrigger: {
-          trigger: ".cta-final__inner",
-          start: "top 82%",
+          trigger: ".ending__inner",
+          start: "top 80%",
           toggleActions: "play reverse play reverse"
         }
       }
@@ -147,7 +143,6 @@
     d3.json("/static/data/world.geojson")
       .then(function (geojson) {
 
-        // Faint country outlines
         svg.append("g")
           .attr("class", "hero-countries")
           .selectAll("path")
@@ -157,13 +152,11 @@
             .attr("class", "hero-country")
             .attr("d", pathGen);
 
-        // Lat/lon graticule
         svg.append("path")
           .datum(d3.geoGraticule()())
           .attr("class", "hero-graticule")
           .attr("d", pathGen);
 
-        // Pulsing dots at ~30 country centroids
         var SAMPLE_CODES = [
           "USA","BRA","RUS","CHN","IND","AUS","NGA","DEU",
           "IDN","MEX","EGY","ZAF","IRN","TUR","FRA","ARG",
@@ -202,17 +195,13 @@
             .attr("cy", function (d) { return d.y; })
             .attr("r",  2);
       })
-      .catch(function () {
-        // Hero still looks fine without the map background
-      });
+      .catch(function () { /* hero looks fine without the map */ });
   }
 
 
   // ================================================================
   // PREVIEW MAP BACKGROUND
-  // Draws the same world-map projection in the preview section frame,
-  // at a slightly higher opacity than the hero — more cinematic,
-  // shows the map experience before the user enters it.
+  // Draws the same world-map projection in the preview section frame.
   // ================================================================
 
   function drawPreviewMap() {
@@ -239,13 +228,11 @@
     d3.json("/static/data/world.geojson")
       .then(function (geojson) {
 
-        // Ocean sphere — deep navy (matches viz page palette)
         svg.append("path")
           .datum({ type: "Sphere" })
           .attr("d", pathGen)
           .attr("fill", "#071929");
 
-        // Graticule — barely visible
         svg.append("path")
           .datum(d3.geoGraticule()())
           .attr("d", pathGen)
@@ -253,7 +240,6 @@
           .attr("stroke", "rgba(30, 75, 140, 0.10)")
           .attr("stroke-width", "0.3px");
 
-        // Countries — dark blue-gray fill, subtle border
         svg.append("g")
           .selectAll("path")
           .data(geojson.features)
@@ -264,9 +250,7 @@
             .attr("stroke", "rgba(79, 130, 180, 0.30)")
             .attr("stroke-width", "0.4px");
       })
-      .catch(function () {
-        // Preview still looks fine without the map background
-      });
+      .catch(function () { /* preview looks fine without the map */ });
   }
 
 })();

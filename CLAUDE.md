@@ -234,15 +234,24 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 
 - [x] CTA language fully unified: "Open the Map" used in navbar, hero, preview, and final CTA
 - [x] 6 sections → 4 sections: story + why merged into `.narrative`; howto + cta-final merged into `.cta-final`
-- [x] Narrative section: metric rows (births/deaths/growth) + bare scale strip (200+, 150, 75, 38K)
-- [x] Metric rows: slide in from left (`x: -50 → 0`) with stagger — bidirectional on scroll up/down
-- [x] Scale stats: scale-up + fade with `back.out(1.4)` spring ease — bidirectional
-- [x] Preview: parallax on map background (`gsap.set scale 1.1 + scrub y: -4% → 4%`) — depth effect
-- [x] CTA steps + CTA inner each have distinct animations — steps fade-up, inner scale-reveal
 - [x] All ScrollTrigger animations bidirectional: `toggleActions: "play reverse play reverse"`
-- [x] Narrative section: subtle left-edge depth gradient (barely-visible cyan) differentiates from flat bg
-- [x] Preview overlay vignette deepened — more atmospheric, better CTA contrast
-- [x] `--space-7: 1.75rem` added to variables.css (was referenced but undefined)
+- [x] Preview: parallax on map background — depth effect
+
+---
+
+## Current Features Working (after landing page full redesign)
+
+- [x] Hero: unchanged — atmospheric D3 background, pulsing dots, GSAP timeline entrance
+- [x] Editorial section: three metrics as large display typography (`clamp(2.5rem, 4.5vw, 4.25rem)`)
+  — asymmetric two-column grid (280px name + 1fr desc), almost-invisible row separators
+- [x] Data strip: thin bar — monospace primary-color numbers + faint labels, vertical separators
+- [x] Preview: taller (76vh / 620px), deeper vignette, CTA button has CSS glow-pulse keyframe animation
+- [x] Ending section: two-column split — guide (left) + CTA headline (right) — asymmetric, editorial
+  — numbered list via CSS counter (no extra HTML spans needed)
+- [x] CTA unified: "Open the Map" everywhere — navbar, hero, preview, ending
+- [x] GSAP animations fully bidirectional (`toggleActions: "play reverse play reverse"` on all):
+  — editorial rows: staggered fade-up — data strip: spring scale-in (back.out) — preview: parallax scrub
+  — ending: guide slides from left, CTA slides from right (opposite directions = split reveal)
 
 ---
 
