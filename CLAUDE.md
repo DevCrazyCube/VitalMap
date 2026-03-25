@@ -170,6 +170,18 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 
 ---
 
+## Current Features Working (after refinement pass)
+
+- [x] Map panning bounded by `translateExtent` — cannot drift off into void
+- [x] Viz page is fully immersive — large header strip removed, map fills the stage
+- [x] Floating year badge (top-centre, `#year-badge`) replaces the old header year display
+- [x] Controls card: lighter (less padding, less opacity), no "Controls" label heading
+- [x] Float cards: slightly reduced opacity/blur — feel lighter and less obtrusive
+- [x] Body `viz-body` class applied server-side via Jinja (`base.html`) — no JS class injection
+- [x] `{% block head %}` JS removed from visualization.html — cleaner template inheritance
+
+---
+
 ## Current Features Working (after night-atlas map styling pass)
 
 - [x] Ocean rendered as deep navy radial gradient (SVG defs `#ocean-gradient`)
@@ -343,6 +355,40 @@ dark design.
 **Files changed in this pass**
 - `static/js/vizualization.js` — custom interpolators, SVG defs/gradient, no-data color, legend
 - `static/css/styling.css` — country-path rules, graticule, sphere fallback, label system
+
+---
+
+### 2026-03-25 — Refinement pass (layout, pan bounds, controls)
+
+**Pan bounds**
+- Added `d3.zoom().translateExtent([[-W*1.5,-H*1.5],[W*2.5,H*2.5]])` in `drawMap()`
+- Prevents the map from drifting more than 1.5× the viewport width/height off-screen
+- Reset view button still works cleanly; zoom/pan fully preserved
+
+**Header removal**
+- Removed the full-width `.viz-header` band (title + subtitle + big year badge)
+- Replaced with a small `.viz-year-badge` floating pill (top-centre of the stage, `id="year-badge"`)
+- Updated `setupControls()` to update `#year-badge` instead of the removed `#header-year`
+- Map stage now fills all space below the navbar — more immersive
+
+**Controls lighter feel**
+- Removed the "Controls" float-card header row from the HTML
+- Reduced `.float-controls` padding (`space-5` → `space-4`) and gap (`space-4` → `space-3`)
+- Reduced card width 240px → 220px
+- Slightly reduced `.float-card` base opacity and shadow — less obtrusive overlay
+
+**Template/HTML structure**
+- `base.html`: added `class="{{ 'viz-body' if page == 'visualization' else '' }}"` to `<body>`
+  — class is now applied server-side (Jinja) instead of via JS at runtime
+- `visualization.html`: removed `{% block head %}` JS script entirely
+- HTML structure remains valid: DOCTYPE, html, head, body all present in base.html
+- All child templates extend base.html correctly
+
+**Files changed in this pass**
+- `templates/base.html` — `viz-body` class via Jinja on `<body>`
+- `templates/visualization.html` — removed header strip, removed JS head block, added year badge, removed "Controls" card header
+- `static/css/styling.css` — removed `.viz-header` rules, added `.viz-year-badge` rules, lighter `.float-card` and `.float-controls`
+- `static/js/vizualization.js` — `translateExtent`, `yearBadge` replaces `headerYear`
 
 ---
 

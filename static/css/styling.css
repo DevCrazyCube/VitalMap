@@ -897,52 +897,29 @@ body.viz-body main {
   overflow: hidden;
 }
 
-/* --- Viz Header --- */
-.viz-header {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  padding: var(--space-5) var(--space-8);
+/* --- Floating year badge — top-centre of the map stage --- */
+.viz-year-badge {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(22, 27, 34, 0.80);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(48, 54, 61, 0.60);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-4);
+  z-index: 10;
+  pointer-events: none;
 }
 
-.viz-header__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-6);
-  max-width: 100%;
-}
-
-.viz-header__title {
+.viz-year-badge__value {
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
-  line-height: 1;
-  margin-bottom: var(--space-1);
-}
-
-.viz-header__sub {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-}
-
-.viz-header__year-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.viz-header__year-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.viz-header__year-value {
-  font-size: var(--text-3xl);
-  font-weight: var(--weight-bold);
   color: var(--color-primary);
-  line-height: 1;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: 0.05em;
 }
 
 /* --- Viz Stage: full-screen map area --- */
@@ -1200,12 +1177,12 @@ body.viz-body main {
 /* Base card — all float-cards share this */
 .float-card {
   position: absolute;
-  background: rgba(22, 27, 34, 0.90);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(48, 54, 61, 0.75);
+  background: rgba(22, 27, 34, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(48, 54, 61, 0.55);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
   z-index: 10;
 }
 
@@ -1238,15 +1215,16 @@ body.viz-body main {
 }
 .float-close:hover { color: var(--color-text); }
 
-/* Controls card — top-left */
+/* Controls card — top-left, slightly lighter and more compact */
 .float-controls {
   top: 16px;
   left: 16px;
-  width: 240px;
-  padding: var(--space-5);
+  width: 220px;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
+  background: rgba(22, 27, 34, 0.82);
 }
 
 /* Details card — top-right */

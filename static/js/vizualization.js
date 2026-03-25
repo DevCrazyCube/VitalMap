@@ -144,7 +144,7 @@
   function setupControls() {
     var yearSlider   = document.getElementById("year-slider");
     var yearDisplay  = document.getElementById("year-display");
-    var headerYear   = document.getElementById("header-year");
+    var yearBadge    = document.getElementById("year-badge");
     var metricSelect = document.getElementById("metric-select");
     var searchInput  = document.getElementById("country-search");
     var searchClear  = document.getElementById("search-clear");
@@ -156,7 +156,7 @@
     yearSlider.addEventListener("input", function () {
       state.year = parseInt(this.value);
       yearDisplay.textContent = state.year;
-      headerYear.textContent  = state.year;
+      if (yearBadge) yearBadge.textContent = state.year;
       updateMap();
       if (state.selectedCode) {
         updateDetails(state.selectedCode);
@@ -327,8 +327,11 @@
     });
 
     // D3 zoom + pan behaviour
+    // translateExtent prevents the map drifting completely off-screen.
+    // The bounds give ~1.5× padding around the natural map dimensions.
     state.zoomBehavior = d3.zoom()
       .scaleExtent([1, 10])
+      .translateExtent([[-W * 1.5, -H * 1.5], [W * 2.5, H * 2.5]])
       .on("zoom", function (event) {
         state.mapG.attr("transform", event.transform);
         state.zoomLevel = event.transform.k;

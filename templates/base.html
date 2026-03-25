@@ -11,7 +11,7 @@
 
   {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{{ 'viz-body' if page == 'visualization' else '' }}">
 
   <!-- Navigation -->
   <nav class="navbar">

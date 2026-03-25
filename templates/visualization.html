@@ -2,29 +2,11 @@
 
 {% block title %}Visualization – VitalMap{% endblock %}
 
-{% block head %}
-<script>document.addEventListener('DOMContentLoaded', function(){ document.body.classList.add('viz-body'); });</script>
-{% endblock %}
-
 {% block content %}
 
 <div class="viz-page">
 
-  <!-- Slim page header -->
-  <div class="viz-header">
-    <div class="viz-header__inner">
-      <div>
-        <h1 class="viz-header__title">World Population Map</h1>
-        <p class="viz-header__sub">Scroll to zoom · Drag to pan · Click a country for detail</p>
-      </div>
-      <div class="viz-header__year-badge">
-        <span class="viz-header__year-label">Year</span>
-        <span class="viz-header__year-value" id="header-year">2000</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Full-screen map stage -->
+  <!-- Full-screen map stage — fills all space below the navbar -->
   <div class="viz-stage" id="viz-stage">
 
     <!-- D3 renders the SVG map here -->
@@ -35,11 +17,13 @@
       </div>
     </div>
 
+    <!-- Small floating year badge — top-centre -->
+    <div class="viz-year-badge">
+      <span class="viz-year-badge__value" id="year-badge">2000</span>
+    </div>
+
     <!-- ── FLOATING: Controls (top-left) ── -->
     <div class="float-card float-controls" id="controls-card">
-      <div class="float-card__header">
-        <span class="float-card__title">Controls</span>
-      </div>
 
       <div class="control-group">
         <label class="control-label" for="year-slider">
