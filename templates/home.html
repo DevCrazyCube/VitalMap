@@ -23,9 +23,7 @@
       Explore the full story on an interactive world map.
     </p>
     <div class="hero__actions" id="hero-actions">
-      <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--lg">
-        Explore the Map
-      </a>
+      <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--lg">Explore the Map</a>
       <a href="#story" class="btn btn--ghost btn--lg">Learn more ↓</a>
     </div>
   </div>
@@ -37,48 +35,46 @@
 
 
 <!-- ============================================================
-     SECTION 2 — STORY / EXPLANATION
+     SECTION 2 — THREE METRICS (horizontal rows, not cards)
      ============================================================ -->
 <section class="story" id="story">
   <div class="container">
-    <div class="story__header reveal-up">
-      <h2 class="section-title">Three numbers shape every society</h2>
-      <p class="section-lead">
-        Hidden inside a single CSV file are the birth and death records for
-        200+ countries across 150 years of history — and 75 years of scientific
-        projections. VitalMap makes that data visible.
+    <div class="story__intro reveal-up">
+      <p class="story__kicker">Three numbers. Every country. 150 years of history.</p>
+      <p class="story__lead">
+        Hidden inside a single dataset are birth and death records for 200+ countries
+        across 150 years of estimates and 75 years of scientific projections.
+        VitalMap makes that data visible.
       </p>
     </div>
-    <div class="story__cards">
-      <div class="metric-card metric-card--births reveal-up" data-delay="0">
-        <div class="metric-card__icon">↑</div>
-        <h3 class="metric-card__title">Births</h3>
-        <p class="metric-card__desc">
-          The number of live births in a country per year. High birth rates signal
-          young, growing populations — and rising demand for schools, housing,
-          and jobs.
+    <div class="story__metrics">
+      <div class="metric-row metric-row--births reveal-fade">
+        <span class="metric-row__index">01</span>
+        <span class="metric-row__name">Births</span>
+        <p class="metric-row__desc">
+          Live births per year. High rates signal young, growing populations —
+          rising demand for schools, housing, and jobs.
         </p>
-        <span class="metric-card__tag">Sequential blue scale on map</span>
+        <span class="metric-row__tag">Blue scale on map</span>
       </div>
-      <div class="metric-card metric-card--deaths reveal-up" data-delay="1">
-        <div class="metric-card__icon">↓</div>
-        <h3 class="metric-card__title">Deaths</h3>
-        <p class="metric-card__desc">
-          Total deaths per year. Rising death rates in an ageing society signal
-          healthcare pressure and pension burden — a challenge for much of
-          Europe and East Asia.
+      <div class="metric-row metric-row--deaths reveal-fade">
+        <span class="metric-row__index">02</span>
+        <span class="metric-row__name">Deaths</span>
+        <p class="metric-row__desc">
+          Total deaths per year. Rising rates in an ageing society signal
+          healthcare pressure — a challenge across much of Europe and East Asia.
         </p>
-        <span class="metric-card__tag">Sequential red scale on map</span>
+        <span class="metric-row__tag">Red scale on map</span>
       </div>
-      <div class="metric-card metric-card--growth reveal-up" data-delay="2">
-        <div class="metric-card__icon">±</div>
-        <h3 class="metric-card__title">Natural Growth</h3>
-        <p class="metric-card__desc">
-          Births minus deaths. Positive means the population is growing from
-          within. Negative — as already happening in several European nations —
-          means it is shrinking without immigration.
+      <div class="metric-row metric-row--growth reveal-fade">
+        <span class="metric-row__index">03</span>
+        <span class="metric-row__name">Natural Growth</span>
+        <p class="metric-row__desc">
+          Births minus deaths. Positive means the population grows from within.
+          Negative — already happening in several countries — means it shrinks
+          without immigration.
         </p>
-        <span class="metric-card__tag">Diverging red–blue scale on map</span>
+        <span class="metric-row__tag">Diverging scale on map</span>
       </div>
     </div>
   </div>
@@ -86,46 +82,32 @@
 
 
 <!-- ============================================================
-     SECTION 3 — WHY IT MATTERS
+     SECTION 3 — SCALE (monumental numbers, single paragraph)
      ============================================================ -->
 <section class="why" id="why">
   <div class="container">
-    <div class="why__inner">
-      <div class="why__text reveal-left">
-        <h2 class="section-title">Why demographic change matters</h2>
-        <p>
-          Population is the foundation beneath every policy decision.
-          A country growing rapidly at 4 million births per year needs a
-          very different plan to one losing 200 000 more people than it gains.
-        </p>
-        <p>
-          Climate adaptation, pension systems, migration policy, city planning —
-          all of them are downstream of the birth-death balance.
-          Understanding the data is the first step to understanding the world.
-        </p>
-        <p>
-          VitalMap lets you compare any country in any year from 1950 to 2100,
-          switch between metrics instantly, and trace the trend line through
-          history and into the UN's medium-variant projections.
-        </p>
+    <p class="why__lead reveal-up">
+      Population is the foundation beneath every policy decision. A country gaining
+      four million people per year needs a very different plan than one losing
+      two hundred thousand. Climate adaptation, pension systems, city planning —
+      all of them are downstream of the birth-death balance.
+    </p>
+    <div class="why__stats">
+      <div class="stat-block reveal-fade" data-delay="0">
+        <span class="stat-block__value">200+</span>
+        <span class="stat-block__label">Countries &amp; territories</span>
       </div>
-      <div class="why__stats reveal-right">
-        <div class="stat-card">
-          <span class="stat-card__value">200+</span>
-          <span class="stat-card__label">Countries &amp; territories</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__value">150</span>
-          <span class="stat-card__label">Years of estimates (1950–2023)</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__value">75</span>
-          <span class="stat-card__label">Years of projections (2024–2100)</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__value">3</span>
-          <span class="stat-card__label">Interactive metrics to explore</span>
-        </div>
+      <div class="stat-block reveal-fade" data-delay="1">
+        <span class="stat-block__value">150</span>
+        <span class="stat-block__label">Years of historical estimates</span>
+      </div>
+      <div class="stat-block reveal-fade" data-delay="2">
+        <span class="stat-block__value">75</span>
+        <span class="stat-block__label">Years of UN projections ahead</span>
+      </div>
+      <div class="stat-block reveal-fade" data-delay="3">
+        <span class="stat-block__value">38K</span>
+        <span class="stat-block__label">Data records, one dataset</span>
       </div>
     </div>
   </div>
@@ -133,79 +115,58 @@
 
 
 <!-- ============================================================
-     SECTION 4 — VISUALIZATION PREVIEW
+     SECTION 4 — PREVIEW (living D3 map frame, true gateway)
      ============================================================ -->
 <section class="preview" id="preview">
-  <div class="container">
-    <div class="preview__header reveal-up">
-      <h2 class="section-title">A world map that answers your questions</h2>
-      <p class="section-lead">
-        Every country is coloured by the metric and year you choose.
-        Click any country to dive deep.
-      </p>
-    </div>
-    <div class="preview__frame reveal-up">
-      <div class="preview__map-mock">
-        <div class="preview__map-overlay">
-          <div class="preview__map-label">Interactive choropleth world map</div>
-          <div class="preview__map-sub">D3.js · Real geographic data · 38 000+ records</div>
-          <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--lg preview__launch">
-            Launch the Map →
-          </a>
-        </div>
-        <!-- Decorative blobs representing map regions -->
-        <svg class="preview__map-svg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
-          <ellipse cx="180" cy="200" rx="130" ry="90" fill="#4fc3f7" opacity="0.15"/>
-          <ellipse cx="400" cy="170" rx="110" ry="70" fill="#4fc3f7" opacity="0.20"/>
-          <ellipse cx="550" cy="200" rx="90" ry="80" fill="#4fc3f7" opacity="0.12"/>
-          <ellipse cx="680" cy="230" rx="70" ry="60" fill="#4fc3f7" opacity="0.18"/>
-          <ellipse cx="300" cy="290" rx="60" ry="40" fill="#4fc3f7" opacity="0.10"/>
-          <ellipse cx="460" cy="300" rx="50" ry="35" fill="#66bb6a" opacity="0.15"/>
-        </svg>
-      </div>
+  <div class="preview__map-frame" id="preview-map-frame">
+    <div id="preview-map-bg" aria-hidden="true"></div>
+    <div class="preview__overlay">
+      <h2 class="preview__title reveal-up">A world map that answers your questions</h2>
+      <p class="preview__hint reveal-up">Scroll to zoom &middot; Drag to pan &middot; Click any country to explore</p>
+      <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl preview__cta reveal-up">
+        Enter the Map →
+      </a>
     </div>
   </div>
 </section>
 
 
 <!-- ============================================================
-     SECTION 5 — HOW TO USE
+     SECTION 5 — HOW TO USE (compact inline strip, not a manual)
      ============================================================ -->
 <section class="howto" id="howto">
   <div class="container">
-    <h2 class="section-title text-center reveal-up">How to use VitalMap</h2>
-    <div class="howto__steps">
-      <div class="howto__step reveal-up" data-delay="0">
-        <div class="howto__step-num">01</div>
-        <h4 class="howto__step-title">Choose a year</h4>
-        <p class="howto__step-desc">
-          Use the year slider on the left panel to jump to any year between
-          1950 and 2100. The map recolours instantly.
-        </p>
+    <div class="howto__row">
+      <div class="howto__step reveal-fade" data-delay="0">
+        <span class="howto__step-num">01</span>
+        <div class="howto__step-body">
+          <strong class="howto__step-title">Choose a year</strong>
+          <span class="howto__step-desc">Drag the slider from 1950 to 2100</span>
+        </div>
       </div>
-      <div class="howto__step reveal-up" data-delay="1">
-        <div class="howto__step-num">02</div>
-        <h4 class="howto__step-title">Pick a metric</h4>
-        <p class="howto__step-desc">
-          Switch between births, deaths, and natural growth using the metric
-          dropdown. Each gets its own colour scale.
-        </p>
+      <div class="howto__sep" aria-hidden="true">→</div>
+      <div class="howto__step reveal-fade" data-delay="1">
+        <span class="howto__step-num">02</span>
+        <div class="howto__step-body">
+          <strong class="howto__step-title">Pick a metric</strong>
+          <span class="howto__step-desc">Switch births, deaths, or natural growth</span>
+        </div>
       </div>
-      <div class="howto__step reveal-up" data-delay="2">
-        <div class="howto__step-num">03</div>
-        <h4 class="howto__step-title">Click a country</h4>
-        <p class="howto__step-desc">
-          Clicking any country highlights it, fills the details panel with
-          exact figures, and draws a trend chart from 1950 to 2100.
-        </p>
+      <div class="howto__sep" aria-hidden="true">→</div>
+      <div class="howto__step reveal-fade" data-delay="2">
+        <span class="howto__step-num">03</span>
+        <div class="howto__step-body">
+          <strong class="howto__step-title">Click a country</strong>
+          <span class="howto__step-desc">See exact data and a 1950–2100 trend chart</span>
+        </div>
       </div>
-      <div class="howto__step reveal-up" data-delay="3">
-        <div class="howto__step-num">04</div>
-        <h4 class="howto__step-title">Search</h4>
-        <p class="howto__step-desc">
-          Type a country name in the search box to highlight and centre it
-          on the map right away.
-        </p>
+      <div class="howto__sep" aria-hidden="true">→</div>
+      <div class="howto__step reveal-fade" data-delay="3">
+        <span class="howto__step-num">04</span>
+        <div class="howto__step-body">
+          <strong class="howto__step-title">Search</strong>
+          <span class="howto__step-desc">Type any country name to jump straight to it</span>
+        </div>
       </div>
     </div>
   </div>
@@ -216,20 +177,16 @@
      SECTION 6 — FINAL CTA
      ============================================================ -->
 <section class="cta-final" id="cta-final">
+  <div class="cta-final__glow" aria-hidden="true"></div>
   <div class="container">
     <div class="cta-final__inner reveal-up">
-      <h2 class="cta-final__title">Ready to explore the data?</h2>
-      <p class="cta-final__sub">
-        Open the interactive map and start clicking countries.
-        Every click tells a story.
-      </p>
+      <p class="cta-final__kicker">The data is waiting</p>
+      <h2 class="cta-final__title">
+        Every country. Every year.<br />All in one map.
+      </h2>
       <div class="cta-final__actions">
-        <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl">
-          Open VitalMap →
-        </a>
-        <a href="{{ url_for('contact') }}" class="btn btn--ghost btn--xl">
-          Send us a message
-        </a>
+        <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl">Open VitalMap →</a>
+        <a href="{{ url_for('contact') }}" class="btn btn--ghost btn--xl">Send a message</a>
       </div>
     </div>
   </div>

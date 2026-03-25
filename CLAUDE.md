@@ -200,6 +200,19 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 
 ---
 
+## Current Features Working (after home-page redesign + pan fix pass)
+
+- [x] Map pan bounds: `translateExtent([[0,0],[W,H]])` — zero drift at zoom 1, correct freedom at higher zoom
+- [x] Home story section: horizontal metric-row layout (not card grid) — births/deaths/growth as full-width rows with accent names, description, scale tag
+- [x] Home why section: monumental stat blocks (4-column grid), single lead paragraph — no two-column layout
+- [x] Home preview section: full-height D3 world map frame (min 380px, up to 68vh) — real map rendered by `drawPreviewMap()` in home.js
+- [x] Home howto section: compact inline strip (4 steps in a flex row with arrow separators) — replaces card grid
+- [x] Home CTA section: atmospheric radial glow element, kicker + large headline, no `.cta-final__sub` text block
+- [x] `reveal-fade` class added — gentler 18px lift for rows and stat blocks, distinct from 40px `reveal-up`
+- [x] GSAP targets updated in home.js to match new class names throughout all sections
+
+---
+
 ## Known Issues / Next Steps
 
 - Natural growth trend line clips at y=0 (negative values not shown) — diverging Y axis would fix this
@@ -389,6 +402,69 @@ dark design.
 - `templates/visualization.html` — removed header strip, removed JS head block, added year badge, removed "Controls" card header
 - `static/css/styling.css` — removed `.viz-header` rules, added `.viz-year-badge` rules, lighter `.float-card` and `.float-controls`
 - `static/js/vizualization.js` — `translateExtent`, `yearBadge` replaces `headerYear`
+
+---
+
+### 2026-03-25 — Home page redesign + pan bounds fix
+
+**Pan bounds fix**
+- `translateExtent([[0, 0], [W, H]])` — the correct D3 pattern
+- At zoom 1: no panning (map fills viewport exactly)
+- At zoom k>1: panning allowed within the map's world bounds × k, no drift possible
+- Previous `[-W*1.5, -H*1.5]` to `[W*2.5, H*2.5]` was too permissive and didn't scale with zoom
+
+**Story section redesign**
+- Removed generic 3-card grid
+- New horizontal metric-row layout: full-width rows with index number, large accent name, description, scale tag
+- Rows separated by subtle border lines — feels like a table of contents or editorial list
+- Hover lifts the row slightly and adds a faint background — interactive without being heavy
+- New `.story__intro` replaces `.story__header` — kicker + lead paragraph intro
+
+**Why section redesign**
+- Removed two-column text + stats layout
+- New: single lead paragraph above, four stat blocks in a 4-column grid below
+- `.stat-block` replaces `.stat-card` — larger value numbers (`clamp(2.25rem, 4vw, 3rem)`), hover state
+- Stats now feel monumental, not like a dashboard widget
+- `reveal-fade` stagger on stat blocks (not `from`, which caused jump on re-entry)
+
+**Preview section redesign**
+- Removed fake SVG blob placeholder
+- Full-height frame (`min(68vh, 580px)`) with actual D3 world map rendered by `drawPreviewMap()`
+- Map uses night-atlas palette: `#071929` ocean, `#14202d` countries, `rgba(79,130,180,0.30)` borders
+- Vignette overlay (`radial-gradient`) keeps text readable over the map
+- Single large CTA button + hint text — nothing else in the frame
+- Feels like a real doorway into the map experience
+
+**How-to section redesign**
+- Removed 4-box card grid
+- New compact horizontal flex row: 4 steps with `→` separators
+- Minimal — step number, title, one-line description
+- Padding reduced to `var(--space-12)` — quick to scan, not a manual
+- `reveal-fade` stagger with `stagger: 0.10`
+
+**CTA section redesign**
+- Added `.cta-final__glow` — decorative radial gradient element (no emoji, no image)
+- Added `.cta-final__kicker` — uppercase label above the headline
+- Headline: "Every country. Every year. All in one map." — more direct and cinematic
+- Font size scaled with `clamp(2rem, 4vw, 3rem)` — responsive
+- Removed `.cta-final__sub` prose paragraph — headline does the work
+
+**Pacing improvements**
+- Background rhythm: bg (hero) → bg (story) → surface (why) → bg (preview) → surface (howto+CTA)
+- Story and why sections have less equal padding (space-20) vs. hero-height sections
+- Preview section breaks the rhythm completely — full height, no container, cinematic
+- Howto and CTA are deliberately lighter/shorter after the heavy preview
+
+**New CSS class: `reveal-fade`**
+- 18px initial translateY (vs. 40px for `reveal-up`) — gentler for rows and blocks
+- Used in story rows, stat blocks, howto steps
+
+**Files changed in this pass**
+- `static/js/vizualization.js` — `translateExtent([[0,0],[W,H]])` (correct pan bounds)
+- `templates/home.html` — full section restructure (story, why, preview, howto, cta-final)
+- `static/css/styling.css` — replaced all home-page section CSS; added `.reveal-fade`
+- `static/js/home.js` — updated GSAP targets; added `drawPreviewMap()`
+- `CLAUDE.md` — updated
 
 ---
 

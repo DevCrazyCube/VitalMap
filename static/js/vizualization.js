@@ -326,12 +326,15 @@
         .style("display", "none");
     });
 
-    // D3 zoom + pan behaviour
-    // translateExtent prevents the map drifting completely off-screen.
-    // The bounds give ~1.5× padding around the natural map dimensions.
+    // D3 zoom + pan behaviour.
+    // translateExtent([[0,0],[W,H]]) clamps pan to the actual map bounds:
+    //   — at zoom 1  → no panning (map exactly fills viewport)
+    //   — at zoom 2  → can pan freely within the map, cannot leave it
+    //   — at zoom 10 → full exploration freedom, still anchored to map
+    // This is the correct fix: extent scales with k automatically.
     state.zoomBehavior = d3.zoom()
       .scaleExtent([1, 10])
-      .translateExtent([[-W * 1.5, -H * 1.5], [W * 2.5, H * 2.5]])
+      .translateExtent([[0, 0], [W, H]])
       .on("zoom", function (event) {
         state.mapG.attr("transform", event.transform);
         state.zoomLevel = event.transform.k;
