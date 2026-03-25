@@ -239,19 +239,23 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 
 ---
 
-## Current Features Working (after landing page full redesign)
+## Current Features Working (after landing page cinematic redo)
 
 - [x] Hero: unchanged — atmospheric D3 background, pulsing dots, GSAP timeline entrance
-- [x] Editorial section: three metrics as large display typography (`clamp(2.5rem, 4.5vw, 4.25rem)`)
-  — asymmetric two-column grid (280px name + 1fr desc), almost-invisible row separators
-- [x] Data strip: thin bar — monospace primary-color numbers + faint labels, vertical separators
-- [x] Preview: taller (76vh / 620px), deeper vignette, CTA button has CSS glow-pulse keyframe animation
-- [x] Ending section: two-column split — guide (left) + CTA headline (right) — asymmetric, editorial
-  — numbered list via CSS counter (no extra HTML spans needed)
-- [x] CTA unified: "Open the Map" everywhere — navbar, hero, preview, ending
-- [x] GSAP animations fully bidirectional (`toggleActions: "play reverse play reverse"` on all):
-  — editorial rows: staggered fade-up — data strip: spring scale-in (back.out) — preview: parallax scrub
-  — ending: guide slides from left, CTA slides from right (opposite directions = split reveal)
+- [x] Story section: three demographic forces as giant chapter headings (`clamp(4rem, 9vw, 8rem)`)
+  — metric word (births / deaths / growth) in full accent colour, stacked above indented text
+  — left-border accent line per chapter (coloured per metric at 28% opacity)
+  — each chapter has its own ScrollTrigger: metric slides from left, text fades up behind it
+- [x] Gateway section: D3 world map at `min(88vh, 760px)` height — the visual portal into the product
+  — vignette overlay (radial-gradient, dark edges / clear centre)
+  — overlay content: thin uppercase label + `Open the Map` button with CSS glow-pulse
+  — GSAP parallax on map background (`scale: 1.12`, `scrub: 1.5`, y: `-5%` → `5%`)
+  — content fades up bidirectionally on enter/exit
+- [x] Finale section: centred, surface background, single headline + two buttons
+  — scale-from-slightly-smaller entrance (`scale: 0.96` → `scale: 1`), bidirectional
+- [x] CTA unified: "Open the Map" everywhere — navbar, hero, gateway, finale
+- [x] All GSAP bidirectional (`toggleActions: "play reverse play reverse"`)
+- [x] `drawGatewayMap()` replaces `drawPreviewMap()` — uses `#gateway-map-bg` / `#gateway-frame` IDs
 
 ---
 
@@ -595,6 +599,42 @@ dark design.
 - `static/css/variables.css` — added `--space-7: 1.75rem`
 - `static/css/styling.css` — removed story+why CSS, new narrative CSS, removed howto CSS, updated cta-final CSS
 - `static/js/home.js` — full animation rewrite: fromTo, bidirectional, parallax, scale-reveal
+- `CLAUDE.md` — updated
+
+---
+
+### 2026-03-25 — Landing page cinematic redo (story + gateway + finale)
+
+**Problem addressed:** Previous landing page iterations (editorial rows, data strip, ending split) felt
+either like a generic marketing site or disconnected template blocks. Required a genuinely different
+structural and visual approach.
+
+**Structure — 4 sections (hero → story → gateway → finale)**
+- Hero: unchanged
+- Story: three demographic chapters stacked with `clamp(4rem, 9vw, 8rem)` metric headings
+  — births/deaths/growth as chapter titles in full accent colour, text indented below with coloured left-border
+  — each chapter has its own ScrollTrigger (fires as the individual chapter enters view)
+- Gateway: D3 world map at `min(88vh, 760px)` — the dominant visual portal into the product
+  — radial-gradient vignette (clear centre, dark edges) — map glows through
+  — overlay: uppercase label + glow-pulse "Open the Map" button only — no other content
+  — GSAP parallax (`scale: 1.12`, `scrub: 1.5`)
+- Finale: centred, single strong headline, two buttons — scale-from-slightly-smaller entrance
+
+**Animation design**
+- Story chapters: per-chapter timeline — metric slides from left (`x: -60`), text fades up (`y: 28`) — each fires independently as chapter scrolls in
+- Gateway content: `opacity: 0, y: 40` → reveal, bidirectional
+- Finale: `scale: 0.96, y: 24` → `scale: 1`, bidirectional
+- All ScrollTrigger: `toggleActions: "play reverse play reverse"` — fully bidirectional
+
+**Copy decisions**
+- Story text: narrative / observational — references only what is directly visible or derivable from the 1950–2100 dataset; no unsupported macroeconomic claims
+- Gateway overlay: minimal — label + CTA only, the map communicates the product
+- Finale headline: "The full story is in the map." — conclusive bridge from story to action
+
+**Files changed in this pass**
+- `templates/home.html` — new 4-section structure (story/gateway/finale replaces editorial/data-strip/preview/ending)
+- `static/css/styling.css` — removed editorial+data-strip+preview+ending CSS; added story+gateway+finale CSS
+- `static/js/home.js` — per-chapter story GSAP, gateway parallax+reveal, finale scale-in; `drawGatewayMap()` replaces `drawPreviewMap()`
 - `CLAUDE.md` — updated
 
 ---

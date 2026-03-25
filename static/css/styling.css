@@ -449,115 +449,79 @@ ul, ol { list-style: none; }
 
 
 /* ================================================================
-   HOME — EDITORIAL SECTION (metrics as display typography)
+   HOME — STORY SECTION (cinematic scroll narrative)
+   Three demographic forces, stacked as chapter headings.
    ================================================================ */
 
-.editorial {
-  padding: var(--space-16) 0 var(--space-12);
+.story {
+  padding: var(--space-24) 0;
   background: var(--color-bg);
   border-top: 1px solid var(--color-border);
 }
 
-.editorial__row {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  align-items: start;
-  gap: var(--space-12);
-  padding: var(--space-10) 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+.story__chapter {
+  padding: var(--space-20) 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
-.editorial__row:last-child { border-bottom: none; }
+.story__chapter:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+.story__chapter:last-child {
+  padding-bottom: 0;
+}
 
-.editorial__name {
-  font-size: clamp(2.5rem, 4.5vw, 4.25rem);
+.story__chapter-metric {
+  font-size: clamp(4rem, 9vw, 8rem);
   font-weight: var(--weight-bold);
-  line-height: 1;
-  letter-spacing: -1.5px;
+  line-height: 0.9;
+  letter-spacing: -3px;
+  margin-bottom: var(--space-8);
 }
-.editorial__row--births .editorial__name { color: var(--color-births); }
-.editorial__row--deaths .editorial__name { color: var(--color-deaths); }
-.editorial__row--growth .editorial__name { color: var(--color-growth); }
+.story__chapter--births .story__chapter-metric { color: var(--color-births); }
+.story__chapter--deaths .story__chapter-metric { color: var(--color-deaths); }
+.story__chapter--growth .story__chapter-metric { color: var(--color-growth); }
 
-.editorial__desc {
-  font-size: var(--text-base);
+.story__chapter-text {
+  font-size: clamp(var(--text-base), 1.6vw, var(--text-lg));
   color: var(--color-text-muted);
   line-height: var(--leading-loose);
-  padding-top: 0.55em;
-  max-width: 560px;
+  max-width: 580px;
+  padding-left: var(--space-8);
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
 }
+.story__chapter--births .story__chapter-text { border-left-color: rgba(79, 195, 247, 0.28); }
+.story__chapter--deaths .story__chapter-text { border-left-color: rgba(239, 83, 80, 0.28); }
+.story__chapter--growth .story__chapter-text { border-left-color: rgba(102, 187, 106, 0.28); }
 
 
 /* ================================================================
-   HOME — DATA STRIP (scale numbers, thin bar between sections)
+   HOME — GATEWAY SECTION (D3 map — true doorway into the viz)
    ================================================================ */
 
-.data-strip {
-  padding: var(--space-8) 0;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.data-strip__inner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-8);
-  flex-wrap: wrap;
-}
-
-.data-strip__stat {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--color-text-faint);
-}
-
-.data-strip__stat strong {
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-bold);
-  color: var(--color-primary);
-  line-height: 1;
-  font-family: var(--font-mono);
-  letter-spacing: -0.5px;
-}
-
-.data-strip__sep {
-  width: 1px;
-  height: 20px;
-  background: var(--color-border);
-  flex-shrink: 0;
-}
-
-
-/* ================================================================
-   HOME — PREVIEW SECTION (living D3 map — true gateway)
-   ================================================================ */
-
-.preview {
+.gateway {
   padding: 0;
   display: block;
 }
 
-.preview__map-frame {
+.gateway__frame {
   position: relative;
-  height: min(76vh, 620px);
-  min-height: 440px;
+  height: min(88vh, 760px);
+  min-height: 480px;
   overflow: hidden;
-  background: var(--color-bg);
+  background: #060f1a;
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
 }
 
-#preview-map-bg {
+#gateway-map-bg {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
 }
 
-.preview__map-svg {
+.gateway__map-svg {
   position: absolute;
   inset: 0;
   display: block;
@@ -566,7 +530,7 @@ ul, ol { list-style: none; }
   height: 100%;
 }
 
-.preview__overlay {
+.gateway__overlay {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -574,90 +538,71 @@ ul, ol { list-style: none; }
   align-items: center;
   justify-content: center;
   background: radial-gradient(
-    ellipse 58% 68% at 50% 50%,
-    rgba(13, 17, 23, 0.28) 0%,
-    rgba(13, 17, 23, 0.72) 100%
+    ellipse 80% 60% at 50% 50%,
+    rgba(6, 15, 26, 0.10) 0%,
+    rgba(6, 15, 26, 0.80) 100%
   );
 }
 
-/* Subtle persistent glow-pulse on the CTA button */
-@keyframes ctaPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0.22), 0 4px 16px rgba(79, 195, 247, 0.25); }
-  50%       { box-shadow: 0 0 0 12px rgba(79, 195, 247, 0), 0 4px 16px rgba(79, 195, 247, 0.25); }
+.gateway__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  text-align: center;
 }
 
-.preview__cta {
-  animation: ctaPulse 3.2s ease-in-out infinite;
+.gateway__label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(139, 148, 158, 0.65);
+}
+
+/* Glow-pulse on the gateway CTA button */
+@keyframes gatewayPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0.22), 0 4px 20px rgba(79, 195, 247, 0.28); }
+  50%       { box-shadow: 0 0 0 14px rgba(79, 195, 247, 0), 0 4px 20px rgba(79, 195, 247, 0.28); }
+}
+
+.gateway__cta {
+  animation: gatewayPulse 3.5s ease-in-out infinite;
 }
 
 
 /* ================================================================
-   HOME — ENDING SECTION (guide + CTA, two-column asymmetric)
+   HOME — FINALE SECTION (closing CTA — spare, centred)
    ================================================================ */
 
-.ending {
+.finale {
   padding: var(--space-24) 0;
-  background: var(--color-bg);
+  background: var(--color-surface);
   border-top: 1px solid var(--color-border);
 }
 
-.ending__inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-16);
-  align-items: center;
-}
-
-.ending__guide-label {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--color-text-faint);
-  margin-bottom: var(--space-6);
-}
-
-.ending__steps {
-  list-style: none;
-  counter-reset: step-counter;
+.finale__inner {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  align-items: center;
+  text-align: center;
+  gap: var(--space-10);
 }
 
-.ending__steps li {
-  display: flex;
-  gap: var(--space-4);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  line-height: var(--leading-normal);
-  counter-increment: step-counter;
-}
-
-.ending__steps li::before {
-  content: "0" counter(step-counter);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-  color: var(--color-primary);
-  letter-spacing: 0.1em;
-  padding-top: 2px;
-  flex-shrink: 0;
-  min-width: 1.5rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.ending__title {
-  font-size: clamp(2rem, 4.5vw, var(--text-5xl));
+.finale__title {
+  font-size: clamp(1.875rem, 4vw, var(--text-4xl));
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
   letter-spacing: -0.5px;
-  margin-bottom: var(--space-10);
   color: var(--color-text);
+  max-width: 520px;
 }
 
-.ending__actions {
+.finale__actions {
   display: flex;
   gap: var(--space-4);
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 

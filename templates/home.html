@@ -35,106 +35,76 @@
 
 
 <!-- ============================================================
-     SECTION 2 — EDITORIAL
-     Three metrics as large display typography — births, deaths,
-     natural growth. Asymmetric two-column editorial layout.
+     SECTION 2 — STORY
+     Three demographic forces as cinematic chapter headings.
+     Each one stacked: giant accent-colour word, then indented text.
      ============================================================ -->
-<section class="editorial" id="story">
+<section class="story" id="story">
   <div class="container">
-    <div class="editorial__row editorial__row--births">
-      <span class="editorial__name">Births</span>
-      <p class="editorial__desc">
-        Live births per year. High rates signal young, fast-growing populations —
-        rising demand for schools, housing, and jobs across entire economies.
+
+    <div class="story__chapter story__chapter--births">
+      <div class="story__chapter-metric">Births</div>
+      <p class="story__chapter-text">
+        Every year, hundreds of millions of children are born around the world.
+        In regions where birth rates remain high, young populations drive demand
+        for schools, housing, and economic growth. In others, birth rates have
+        fallen sharply — leaving fewer new entrants to support aging societies.
       </p>
     </div>
-    <div class="editorial__row editorial__row--deaths">
-      <span class="editorial__name">Deaths</span>
-      <p class="editorial__desc">
-        Total deaths per year. Rising mortality in ageing societies signals mounting
-        healthcare pressure — a challenge already unfolding across Europe and East Asia.
+
+    <div class="story__chapter story__chapter--deaths">
+      <div class="story__chapter-metric">Deaths</div>
+      <p class="story__chapter-text">
+        Life expectancy has risen across most of the world over the past century.
+        As a result, the proportion of older people in many populations is growing.
+        The balance between younger and older age groups shapes how economies,
+        healthcare systems, and cities are planned for the long term.
       </p>
     </div>
-    <div class="editorial__row editorial__row--growth">
-      <span class="editorial__name">Growth</span>
-      <p class="editorial__desc">
-        Births minus deaths. When the balance tips negative — already happening
-        in dozens of countries — a nation shrinks from within, without immigration.
+
+    <div class="story__chapter story__chapter--growth">
+      <div class="story__chapter-metric">Growth</div>
+      <p class="story__chapter-text">
+        Natural growth — births minus deaths — is the number beneath everything
+        else. When it turns negative, a population begins to shrink without
+        immigration. That has already happened in dozens of countries. The pattern
+        is visible, country by country, year by year, in the data.
       </p>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SECTION 3 — GATEWAY (living D3 map — doorway into the viz)
+     ============================================================ -->
+<section class="gateway" id="gateway">
+  <div class="gateway__frame" id="gateway-frame">
+    <div id="gateway-map-bg" aria-hidden="true"></div>
+    <div class="gateway__overlay">
+      <div class="gateway__content">
+        <p class="gateway__label">Interactive world map · 1950 – 2100</p>
+        <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl gateway__cta">
+          Open the Map
+        </a>
+      </div>
     </div>
   </div>
 </section>
 
 
 <!-- ============================================================
-     DATA STRIP — bare scale numbers, thin bar
+     SECTION 4 — FINALE (closing CTA — spare, centred)
      ============================================================ -->
-<div class="data-strip">
+<section class="finale" id="finale">
   <div class="container">
-    <div class="data-strip__inner">
-      <span class="data-strip__stat">
-        <strong>200+</strong> countries &amp; territories
-      </span>
-      <span class="data-strip__sep" aria-hidden="true"></span>
-      <span class="data-strip__stat">
-        <strong>150</strong> years of historical data
-      </span>
-      <span class="data-strip__sep" aria-hidden="true"></span>
-      <span class="data-strip__stat">
-        <strong>75</strong> years of UN projections
-      </span>
-      <span class="data-strip__sep" aria-hidden="true"></span>
-      <span class="data-strip__stat">
-        <strong>38K</strong> records in one dataset
-      </span>
-    </div>
-  </div>
-</div>
-
-
-<!-- ============================================================
-     SECTION 3 — PREVIEW (living D3 map — doorway into the viz)
-     ============================================================ -->
-<section class="preview" id="preview">
-  <div class="preview__map-frame" id="preview-map-frame">
-    <div id="preview-map-bg" aria-hidden="true"></div>
-    <div class="preview__overlay">
-      <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl preview__cta reveal-up">
-        Open the Map
-      </a>
-    </div>
-  </div>
-</section>
-
-
-<!-- ============================================================
-     SECTION 4 — ENDING
-     How-to guide (left) + final CTA (right). Asymmetric, editorial.
-     ============================================================ -->
-<section class="ending" id="cta-final">
-  <div class="container">
-    <div class="ending__inner">
-
-      <div class="ending__guide">
-        <p class="ending__guide-label">How to use it</p>
-        <ol class="ending__steps">
-          <li>Choose a year — drag the slider from 1950 to 2100</li>
-          <li>Pick a metric — births, deaths, or natural growth</li>
-          <li>Click any country — see exact data and a trend chart</li>
-          <li>Search — jump to any country by name</li>
-        </ol>
+    <div class="finale__inner">
+      <h2 class="finale__title">The full story is in the map.</h2>
+      <div class="finale__actions">
+        <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl">Open the Map</a>
+        <a href="{{ url_for('contact') }}" class="btn btn--ghost btn--xl">Contact</a>
       </div>
-
-      <div class="ending__cta">
-        <h2 class="ending__title">
-          Every country.<br />Every year.<br />All in one map.
-        </h2>
-        <div class="ending__actions">
-          <a href="{{ url_for('visualization') }}" class="btn btn--primary btn--xl">Open the Map</a>
-          <a href="{{ url_for('contact') }}" class="btn btn--ghost btn--xl">Contact</a>
-        </div>
-      </div>
-
     </div>
   </div>
 </section>

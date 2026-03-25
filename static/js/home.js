@@ -2,7 +2,7 @@
  * VitalMap — home.js
  * GSAP + ScrollTrigger animations for the Home landing page.
  * Also renders a subtle D3 world-map outline in the hero background
- * and a more-visible map in the preview gateway section.
+ * and a more-visible map in the gateway section.
  * Only loaded on the home page (via {% block scripts %}).
  */
 
@@ -13,7 +13,7 @@
 
     // ── 0. Background maps ─────────────────────────────────────────────
     drawHeroMap();
-    drawPreviewMap();
+    drawGatewayMap();
 
     gsap.registerPlugin(ScrollTrigger);
 
@@ -26,84 +26,67 @@
       .to("#hero-actions", { opacity: 1, y: 0, duration: 0.6 }, "-=0.35")
       .to("#hero-scroll",  { opacity: 1,        duration: 0.8 }, "-=0.1");
 
-    // ── 2. Editorial rows — each row reveals with a staggered fade-up ──
-    // Bidirectional: rows retreat when scrolling back up.
-    gsap.fromTo(".editorial__row",
-      { opacity: 0, y: 40 },
-      {
-        opacity: 1, y: 0,
-        duration: 0.8, ease: "power3.out", stagger: 0.18,
+    // ── 2. Story chapters — per-chapter timeline ────────────────────────
+    // Each chapter has its own ScrollTrigger so it fires as it enters.
+    // Metric name slides from the left; text fades up slightly behind it.
+    // Bidirectional: chapters retreat when scrolling back up.
+    document.querySelectorAll(".story__chapter").forEach(function (chapter) {
+      var metric = chapter.querySelector(".story__chapter-metric");
+      var text   = chapter.querySelector(".story__chapter-text");
+
+      var tl = gsap.timeline({
         scrollTrigger: {
-          trigger: ".editorial",
-          start: "top 78%",
+          trigger: chapter,
+          start: "top 82%",
           toggleActions: "play reverse play reverse"
         }
-      }
-    );
+      });
 
-    // ── 3. Data strip — numbers spring into view with stagger ──────────
-    gsap.fromTo(".data-strip__stat",
-      { opacity: 0, scale: 0.82, y: 12 },
-      {
-        opacity: 1, scale: 1, y: 0,
-        duration: 0.5, ease: "back.out(1.6)", stagger: 0.09,
-        scrollTrigger: {
-          trigger: ".data-strip",
-          start: "top 90%",
-          toggleActions: "play reverse play reverse"
-        }
-      }
-    );
+      tl.fromTo(metric,
+          { opacity: 0, x: -60 },
+          { opacity: 1, x: 0, duration: 0.9, ease: "power3.out" }
+        )
+        .fromTo(text,
+          { opacity: 0, y: 28 },
+          { opacity: 1, y: 0, duration: 0.75, ease: "power3.out" },
+          "-=0.5"
+        );
+    });
 
-    // ── 4. Preview — parallax on the map background ─────────────────────
-    // Scale up the bg slightly so the y-travel does not expose edges.
-    gsap.set("#preview-map-bg", { scale: 1.12, y: "-5%" });
-    gsap.to("#preview-map-bg", {
+    // ── 3. Gateway — parallax on the map background ─────────────────────
+    // Scale up so the y-travel does not expose edges.
+    gsap.set("#gateway-map-bg", { scale: 1.12, y: "-5%" });
+    gsap.to("#gateway-map-bg", {
       y: "5%",
       ease: "none",
       scrollTrigger: {
-        trigger: ".preview",
+        trigger: ".gateway",
         start: "top bottom",
         end: "bottom top",
         scrub: 1.5
       }
     });
 
-    // CTA button reveals from below — bidirectional.
-    gsap.fromTo(".preview .reveal-up",
-      { opacity: 0, y: 32 },
+    // Content (label + CTA) fades up as the section enters — bidirectional.
+    gsap.fromTo(".gateway__content",
+      { opacity: 0, y: 40 },
       {
-        opacity: 1, y: 0, duration: 1.0, ease: "power3.out",
+        opacity: 1, y: 0, duration: 1.1, ease: "power3.out",
         scrollTrigger: {
-          trigger: ".preview",
-          start: "top 66%",
+          trigger: ".gateway",
+          start: "top 68%",
           toggleActions: "play reverse play reverse"
         }
       }
     );
 
-    // ── 5. Ending — guide slides from left, CTA slides from right ──────
-    // Two columns arriving from opposite sides — the split feels intentional.
-    gsap.fromTo(".ending__guide",
-      { opacity: 0, x: -36 },
+    // ── 4. Finale — scale from slightly smaller + fade ──────────────────
+    gsap.fromTo(".finale__inner",
+      { opacity: 0, scale: 0.96, y: 24 },
       {
-        opacity: 1, x: 0,
-        duration: 0.85, ease: "power3.out",
+        opacity: 1, scale: 1, y: 0, duration: 1.1, ease: "power3.out",
         scrollTrigger: {
-          trigger: ".ending__inner",
-          start: "top 80%",
-          toggleActions: "play reverse play reverse"
-        }
-      }
-    );
-
-    gsap.fromTo(".ending__cta",
-      { opacity: 0, x: 36 },
-      {
-        opacity: 1, x: 0,
-        duration: 0.85, ease: "power3.out",
-        scrollTrigger: {
-          trigger: ".ending__inner",
+          trigger: ".finale",
           start: "top 80%",
           toggleActions: "play reverse play reverse"
         }
@@ -200,21 +183,21 @@
 
 
   // ================================================================
-  // PREVIEW MAP BACKGROUND
-  // Draws the same world-map projection in the preview section frame.
+  // GATEWAY MAP BACKGROUND
+  // Draws the same world-map projection in the gateway section frame.
   // ================================================================
 
-  function drawPreviewMap() {
-    var bg    = document.getElementById("preview-map-bg");
-    var frame = document.getElementById("preview-map-frame");
+  function drawGatewayMap() {
+    var bg    = document.getElementById("gateway-map-bg");
+    var frame = document.getElementById("gateway-frame");
     if (!bg || !frame) return;
 
     var W = frame.offsetWidth  || window.innerWidth;
     var H = frame.offsetHeight || 500;
 
-    var svg = d3.select("#preview-map-bg")
+    var svg = d3.select("#gateway-map-bg")
       .append("svg")
-      .attr("class", "preview__map-svg")
+      .attr("class", "gateway__map-svg")
       .attr("width",  W)
       .attr("height", H)
       .attr("aria-hidden", "true");
@@ -250,7 +233,7 @@
             .attr("stroke", "rgba(79, 130, 180, 0.30)")
             .attr("stroke-width", "0.4px");
       })
-      .catch(function () { /* preview looks fine without the map */ });
+      .catch(function () { /* gateway looks fine without the map */ });
   }
 
 })();
