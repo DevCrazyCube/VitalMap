@@ -449,17 +449,24 @@ ul, ol { list-style: none; }
 
 
 /* ================================================================
-   HOME — STORY SECTION (horizontal metric rows)
+   HOME — NARRATIVE SECTION (metrics + scale strip)
+   Replaces the old story + why sections.
    ================================================================ */
 
-.story {
+.narrative {
   padding: var(--space-20) 0 var(--space-16);
   background: var(--color-bg);
   border-top: 1px solid var(--color-border);
+  /* Very faint left-edge cyan depth — barely visible, adds dimensionality */
+  background-image: linear-gradient(
+    to right,
+    rgba(79, 195, 247, 0.025) 0%,
+    transparent 45%
+  );
 }
 
 /* Three full-width horizontal metric rows */
-.story__metrics {
+.narrative__metrics {
   display: flex;
   flex-direction: column;
 }
@@ -497,51 +504,40 @@ ul, ol { list-style: none; }
   margin: 0;
 }
 
-
-/* ================================================================
-   HOME — WHY SECTION (monumental numbers)
-   ================================================================ */
-
-.why {
-  padding: var(--space-20) 0;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.why__stats {
+/* Scale strip: 4 raw numbers in a horizontal row — no boxes */
+.narrative__scale {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-3);
+  margin-top: var(--space-12);
+  padding-top: var(--space-10);
+  border-top: 1px solid var(--color-border);
 }
 
-.stat-block {
+.scale-stat {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-8) var(--space-6);
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  transition: border-color var(--t-base), transform var(--t-base);
+  padding-right: var(--space-6);
+  border-right: 1px solid var(--color-border);
 }
-.stat-block:hover {
-  border-color: rgba(79, 195, 247, 0.30);
-  transform: translateY(-2px);
+.scale-stat:last-child {
+  border-right: none;
+  padding-right: 0;
 }
 
-.stat-block__value {
-  font-size: clamp(2.25rem, 4vw, var(--text-5xl));
+.scale-stat__value {
+  font-size: clamp(2rem, 4vw, var(--text-5xl));
   font-weight: var(--weight-bold);
   color: var(--color-primary);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-.stat-block__label {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  line-height: var(--leading-normal);
+.scale-stat__label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-faint);
 }
 
 
@@ -591,82 +587,26 @@ ul, ol { list-style: none; }
   align-items: center;
   justify-content: center;
   gap: var(--space-5);
-  /* Vignette darkens map edges so text stays readable */
+  /* Deeper vignette — map visible through the centre, dark atmospheric edges */
   background: radial-gradient(
-    ellipse 70% 80% at 50% 50%,
-    rgba(13, 17, 23, 0.22) 0%,
-    rgba(13, 17, 23, 0.65) 100%
+    ellipse 58% 68% at 50% 50%,
+    rgba(13, 17, 23, 0.32) 0%,
+    rgba(13, 17, 23, 0.72) 100%
   );
 }
 
 .preview__cta {
-  margin-top: var(--space-2);
+  /* No extra margin — overlay gap handles it */
 }
 
 
 /* ================================================================
-   HOME — HOW TO USE (compact inline strip)
-   ================================================================ */
-
-.howto {
-  padding: var(--space-12) 0;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.howto__row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-
-.howto__step {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  flex: 1;
-  min-width: 150px;
-}
-
-.howto__step-num {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-  color: var(--color-primary);
-  letter-spacing: 0.1em;
-  flex-shrink: 0;
-  padding-top: 2px;
-  font-variant-numeric: tabular-nums;
-}
-
-.howto__step-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.howto__step-title {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semi);
-  color: var(--color-text);
-  display: block;
-}
-
-.howto__step-desc {
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  line-height: var(--leading-normal);
-  display: block;
-}
-
-
-/* ================================================================
-   HOME — FINAL CTA
+   HOME — FINAL CTA (merged with how-to steps)
    ================================================================ */
 
 .cta-final {
   position: relative;
-  padding: var(--space-24) 0;
+  padding: var(--space-20) 0 var(--space-24);
   overflow: hidden;
 }
 
@@ -683,6 +623,56 @@ ul, ol { list-style: none; }
   z-index: 0;
 }
 
+/* Compact how-to steps strip at top of section */
+.cta-final__steps {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: var(--space-6);
+  margin-bottom: var(--space-16);
+  padding-bottom: var(--space-12);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.cta-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 140px;
+}
+
+.cta-step__num {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--color-primary);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  padding-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cta-step__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cta-step__body strong {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semi);
+  color: var(--color-text);
+  display: block;
+}
+
+.cta-step__body span {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  display: block;
+}
+
+/* CTA headline + buttons */
 .cta-final__inner {
   position: relative;
   z-index: 1;

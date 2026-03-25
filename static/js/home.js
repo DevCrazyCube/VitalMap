@@ -11,52 +11,108 @@
 
   document.addEventListener("DOMContentLoaded", function () {
 
-    // ── 0. Background maps ────────────────────────────────────────────
+    // ── 0. Background maps ─────────────────────────────────────────────
     drawHeroMap();
     drawPreviewMap();
 
-    // Register the ScrollTrigger plugin
     gsap.registerPlugin(ScrollTrigger);
 
-    // ── 1. Hero entrance animation ───────────────────────────────────
+    // ── 1. Hero entrance — sequential reveals ──────────────────────────
     var heroTl = gsap.timeline({ defaults: { ease: "power3.out" } });
-
     heroTl
       .to("#hero-eyebrow", { opacity: 1, y: 0, duration: 0.7, delay: 0.3 })
-      .to("#hero-title",   { opacity: 1, y: 0, duration: 0.8 }, "-=0.3")
-      .to("#hero-sub",     { opacity: 1, y: 0, duration: 0.7 }, "-=0.4")
-      .to("#hero-actions", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
+      .to("#hero-title",   { opacity: 1, y: 0, duration: 0.9 }, "-=0.3")
+      .to("#hero-sub",     { opacity: 1, y: 0, duration: 0.7 }, "-=0.45")
+      .to("#hero-actions", { opacity: 1, y: 0, duration: 0.6 }, "-=0.35")
       .to("#hero-scroll",  { opacity: 1,        duration: 0.8 }, "-=0.1");
 
-    // ── 2. Story section — staggered metric rows ─────────────────────
-    gsap.to(".story .metric-row.reveal-fade", {
-      scrollTrigger: { trigger: ".story__metrics", start: "top 82%", toggleActions: "play none none none" },
-      opacity: 1, y: 0, duration: 0.65, ease: "power3.out", stagger: 0.14
+    // ── 2. Narrative — metric rows slide in from left ───────────────────
+    // Each row arrives from the left and reverses back out when scrolling up.
+    // fromTo gives explicit control of both ends so bidirectional works cleanly.
+    gsap.fromTo(".narrative .metric-row",
+      { x: -50, opacity: 0 },
+      {
+        x: 0, opacity: 1,
+        duration: 0.75, ease: "power3.out", stagger: 0.14,
+        scrollTrigger: {
+          trigger: ".narrative__metrics",
+          start: "top 80%",
+          toggleActions: "play reverse play reverse"
+        }
+      }
+    );
+
+    // ── 3. Narrative — scale stats: scale-up into view ─────────────────
+    // Distinct from the metric rows — back.out gives a subtle overshoot.
+    gsap.fromTo(".scale-stat",
+      { y: 24, opacity: 0, scale: 0.85 },
+      {
+        y: 0, opacity: 1, scale: 1,
+        duration: 0.65, ease: "back.out(1.4)", stagger: 0.09,
+        scrollTrigger: {
+          trigger: ".narrative__scale",
+          start: "top 86%",
+          toggleActions: "play reverse play reverse"
+        }
+      }
+    );
+
+    // ── 4. Preview — parallax on the map background ─────────────────────
+    // Scale the bg element slightly larger than its container so the
+    // parallax translation does not reveal empty space at the edges.
+    gsap.set("#preview-map-bg", { scale: 1.1, y: "-4%" });
+    gsap.to("#preview-map-bg", {
+      y: "4%",
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".preview",
+        start: "top bottom",
+        end: "bottom top",
+        scrub: 1.5
+      }
     });
 
-    // ── 3. Why section — staggered stat blocks ────────────────────────
-    gsap.to(".why .stat-block.reveal-fade", {
-      scrollTrigger: { trigger: ".why__stats", start: "top 82%", toggleActions: "play none none none" },
-      opacity: 1, y: 0, duration: 0.65, ease: "power2.out", stagger: 0.10
-    });
+    // CTA button reveal over the map — bidirectional.
+    gsap.fromTo(".preview .reveal-up",
+      { opacity: 0, y: 28 },
+      {
+        opacity: 1, y: 0, duration: 0.9, ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".preview",
+          start: "top 68%",
+          toggleActions: "play reverse play reverse"
+        }
+      }
+    );
 
-    // ── 4. Preview section — staggered overlay elements ──────────────
-    gsap.to(".preview .reveal-up", {
-      scrollTrigger: { trigger: ".preview", start: "top 75%", toggleActions: "play none none none" },
-      opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.16
-    });
+    // ── 5. CTA steps — staggered fade from below ────────────────────────
+    gsap.fromTo(".cta-step",
+      { y: 18, opacity: 0 },
+      {
+        y: 0, opacity: 1,
+        duration: 0.6, ease: "power3.out", stagger: 0.09,
+        scrollTrigger: {
+          trigger: ".cta-final__steps",
+          start: "top 88%",
+          toggleActions: "play reverse play reverse"
+        }
+      }
+    );
 
-    // ── 5. How-to strip ──────────────────────────────────────────────
-    gsap.to(".howto .reveal-fade", {
-      scrollTrigger: { trigger: ".howto__row", start: "top 88%", toggleActions: "play none none none" },
-      opacity: 1, y: 0, duration: 0.6, ease: "power3.out", stagger: 0.10
-    });
-
-    // ── 6. Final CTA ─────────────────────────────────────────────────
-    gsap.to(".cta-final .reveal-up", {
-      scrollTrigger: { trigger: ".cta-final", start: "top 80%", toggleActions: "play none none none" },
-      opacity: 1, y: 0, duration: 0.9, ease: "power3.out"
-    });
+    // ── 6. CTA inner — scale-up reveal ─────────────────────────────────
+    // Scale from slightly smaller + fade up — more impactful than a plain fade.
+    gsap.fromTo(".cta-final__inner",
+      { opacity: 0, y: 30, scale: 0.96 },
+      {
+        opacity: 1, y: 0, scale: 1,
+        duration: 1.0, ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".cta-final__inner",
+          start: "top 82%",
+          toggleActions: "play reverse play reverse"
+        }
+      }
+    );
 
   }); // end DOMContentLoaded
 

@@ -230,6 +230,22 @@ Shared JS: `main.js` — nav active fallback, auto-dismiss flash, `window.format
 
 ---
 
+## Current Features Working (after cinematic landing pass)
+
+- [x] CTA language fully unified: "Open the Map" used in navbar, hero, preview, and final CTA
+- [x] 6 sections → 4 sections: story + why merged into `.narrative`; howto + cta-final merged into `.cta-final`
+- [x] Narrative section: metric rows (births/deaths/growth) + bare scale strip (200+, 150, 75, 38K)
+- [x] Metric rows: slide in from left (`x: -50 → 0`) with stagger — bidirectional on scroll up/down
+- [x] Scale stats: scale-up + fade with `back.out(1.4)` spring ease — bidirectional
+- [x] Preview: parallax on map background (`gsap.set scale 1.1 + scrub y: -4% → 4%`) — depth effect
+- [x] CTA steps + CTA inner each have distinct animations — steps fade-up, inner scale-reveal
+- [x] All ScrollTrigger animations bidirectional: `toggleActions: "play reverse play reverse"`
+- [x] Narrative section: subtle left-edge depth gradient (barely-visible cyan) differentiates from flat bg
+- [x] Preview overlay vignette deepened — more atmospheric, better CTA contrast
+- [x] `--space-7: 1.75rem` added to variables.css (was referenced but undefined)
+
+---
+
 ## Known Issues / Next Steps
 
 - Natural growth trend line clips at y=0 (negative values not shown) — diverging Y axis would fix this
@@ -520,6 +536,56 @@ dark design.
 - `templates/home.html` — story intro, metric row index/tag, why lead, preview overlay, howto sep, CTA kicker removed
 - `static/css/styling.css` — removed corresponding dead CSS rules; metric-row grid updated
 - `static/js/home.js` — removed obsolete story/why reveal-up GSAP targets
+- `CLAUDE.md` — updated
+
+---
+
+### 2026-03-25 — Cinematic landing pass (unity, CTA, animation, structure)
+
+**Problem addressed:** Landing felt like six independent template blocks rather than one guided experience. CTA language was inconsistent across four locations. Animations were all identical fade-ups.
+
+**CTA unification**
+- Navbar: "Open Map" → "Open the Map"
+- Hero: "Explore the Map" → "Open the Map"
+- Preview: "Enter the Map →" → "Open the Map"
+- Final CTA: "Open VitalMap →" → "Open the Map"
+- Secondary hero CTA: "Learn more ↓" → "See the data ↓" (more directional)
+- Secondary final CTA: "Send a message" → "Contact" (minimal, consistent)
+
+**Structural merge (6 → 4 sections)**
+- `section.story` + `section.why` merged → `section.narrative`
+  - Metric rows (births/deaths/growth) now share the same container as the scale strip
+  - Scale strip replaces boxed stat-block cards — just raw numbers with separator lines
+  - One section instead of two eliminates the "stacked blocks" feeling
+- `section.howto` + `section.cta-final` merged → `section.cta-final`
+  - How-to steps (`cta-step`) now sit at the top of the CTA section above a separator line
+  - The CTA headline and buttons below feel like a natural conclusion
+  - One section instead of two removes a visual weight repetition
+
+**Animation upgrades (distinct per section)**
+- Metric rows: `fromTo` slide-from-left (`x: -50` → `x: 0`) — data-reveal feeling, not generic fade-up
+- Scale stats: `fromTo` scale-up (`scale: 0.85` → `scale: 1`) with `back.out(1.4)` — spring overshoot
+- Preview map background: GSAP parallax (`scale: 1.1`, `scrub: 1.5`, y: `-4%` → `4%`) — depth, cinematic
+- CTA inner: scale-from-slightly-smaller (`scale: 0.96`) + fade-up — more impactful end moment
+- CTA steps: standard fade-up with stagger — kept simple, lighter than the section above it
+
+**Bidirectional scroll**
+- All ScrollTrigger animations use `toggleActions: "play reverse play reverse"`
+- Elements animate back out when user scrolls up through a section
+- Preview parallax uses `scrub: 1.5` — continuous parallax in both directions
+- Result: page feels alive at every scroll position, not just on first entry
+
+**Visual depth additions**
+- Narrative section: barely-visible left-edge cyan gradient (`rgba(79,195,247,0.025)`) — breaks flat bg
+- Preview overlay: vignette deepened (`0.32 → 0.72`) — more atmospheric portal feeling
+- Scale strip: vertical separator borders between stats (no cards/boxes) — data-table aesthetic
+
+**Files changed in this pass**
+- `templates/home.html` — 6→4 sections, CTA unification, new HTML structure throughout
+- `templates/base.html` — navbar CTA: "Open Map" → "Open the Map"
+- `static/css/variables.css` — added `--space-7: 1.75rem`
+- `static/css/styling.css` — removed story+why CSS, new narrative CSS, removed howto CSS, updated cta-final CSS
+- `static/js/home.js` — full animation rewrite: fromTo, bidirectional, parallax, scale-reveal
 - `CLAUDE.md` — updated
 
 ---
