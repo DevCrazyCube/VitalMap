@@ -1,10 +1,182 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Visualization</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}Visualization – VitalMap{% endblock %}
+
+{% block head %}
+<script>document.addEventListener('DOMContentLoaded', function(){ document.body.classList.add('viz-body'); });</script>
+{% endblock %}
+
+{% block content %}
+
+<div class="viz-page">
+
+  <!-- Page header -->
+  <div class="viz-header">
+    <div class="viz-header__inner">
+      <div>
+        <h1 class="viz-header__title">World Population Map</h1>
+        <p class="viz-header__sub">
+          Select a year and metric · Hover countries for details · Click to see the trend
+        </p>
+      </div>
+      <div class="viz-header__year-badge">
+        <span class="viz-header__year-label">Viewing year</span>
+        <span class="viz-header__year-value" id="header-year">2000</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main layout: sidebar + map area -->
+  <div class="viz-layout">
+
+    <!-- ---- SIDEBAR / CONTROLS ---- -->
+    <aside class="viz-sidebar">
+
+      <!-- Year control -->
+      <div class="control-group">
+        <label class="control-label" for="year-slider">
+          Year
+          <span class="control-value" id="year-display">2000</span>
+        </label>
+        <input
+          class="year-slider"
+          type="range"
+          id="year-slider"
+          min="1950"
+          max="2100"
+          step="1"
+          value="2000"
+        />
+        <div class="year-slider__endpoints">
+          <span>1950</span><span>2100</span>
+        </div>
+      </div>
+
+      <!-- Metric control -->
+      <div class="control-group">
+        <label class="control-label" for="metric-select">Metric</label>
+        <select class="control-select" id="metric-select">
+          <option value="births">Births</option>
+          <option value="deaths">Deaths</option>
+          <option value="natural_growth">Natural Growth</option>
+        </select>
+        <p class="control-hint" id="metric-hint">
+          Total births per year. Sequential blue colour scale.
+        </p>
+      </div>
+
+      <!-- Country search -->
+      <div class="control-group">
+        <label class="control-label" for="country-search">Search country</label>
+        <div class="search-wrap">
+          <input
+            class="control-input"
+            type="text"
+            id="country-search"
+            placeholder="e.g. Germany…"
+            autocomplete="off"
+          />
+          <button class="search-clear" id="search-clear" title="Clear search">×</button>
+          <div class="search-suggestions" id="search-suggestions"></div>
+        </div>
+      </div>
+
+      <!-- Country details panel -->
+      <div class="details-panel" id="details-panel">
+        <div class="details-panel__empty" id="details-empty">
+          <div class="details-panel__empty-icon">🌍</div>
+          <p>Click any country on the map to see its data here.</p>
+        </div>
+        <div class="details-panel__content" id="details-content" style="display:none">
+          <div class="details-panel__country-name" id="detail-country"></div>
+          <div class="details-panel__year-badge" id="detail-year-badge"></div>
+          <div class="details-rows">
+            <div class="details-row details-row--births">
+              <span class="details-row__label">Births</span>
+              <span class="details-row__value" id="detail-births">—</span>
+            </div>
+            <div class="details-row details-row--deaths">
+              <span class="details-row__label">Deaths</span>
+              <span class="details-row__value" id="detail-deaths">—</span>
+            </div>
+            <div class="details-row details-row--growth">
+              <span class="details-row__label">Natural Growth</span>
+              <span class="details-row__value" id="detail-growth">—</span>
+            </div>
+          </div>
+          <div class="details-panel__growth-indicator" id="growth-indicator"></div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ---- MAP + CHART ---- -->
+    <div class="viz-main">
+
+      <!-- Choropleth map -->
+      <div class="map-container" id="map-container">
+        <div class="map-loading" id="map-loading">
+          <div class="spinner"></div>
+          <span>Loading map data…</span>
+        </div>
+        <!-- D3 renders the SVG here -->
+      </div>
+
+      <!-- Legend -->
+      <div class="map-legend" id="map-legend">
+        <span class="map-legend__label map-legend__label--low" id="legend-low"></span>
+        <div class="map-legend__gradient" id="legend-gradient"></div>
+        <span class="map-legend__label map-legend__label--high" id="legend-high"></span>
+        <span class="map-legend__title" id="legend-title"></span>
+      </div>
+
+      <!-- Trend chart area -->
+      <div class="trend-section" id="trend-section">
+        <div class="trend-header">
+          <h3 class="trend-title" id="trend-title">Select a country to view its trend</h3>
+          <p class="trend-subtitle" id="trend-subtitle"></p>
+        </div>
+        <div class="trend-chart-wrap" id="trend-chart-wrap">
+          <div class="trend-empty" id="trend-empty">
+            <p>Click a country on the map to display its births and deaths trend from 1950 to 2100.</p>
+          </div>
+          <!-- D3 trend SVG goes here -->
+        </div>
+        <div class="trend-legend" id="trend-legend" style="display:none">
+          <span class="trend-legend__item trend-legend__item--births">― Births</span>
+          <span class="trend-legend__item trend-legend__item--deaths">― Deaths</span>
+          <span class="trend-legend__item trend-legend__item--growth">― Natural Growth</span>
+        </div>
+      </div>
+
+    </div><!-- /viz-main -->
+
+  </div><!-- /viz-layout -->
+
+</div><!-- /viz-page -->
+
+<!-- Tooltip (floats over map) -->
+<div class="map-tooltip" id="map-tooltip" style="display:none">
+  <div class="map-tooltip__name" id="tt-name"></div>
+  <div class="map-tooltip__year" id="tt-year"></div>
+  <div class="map-tooltip__rows">
+    <div class="map-tooltip__row">
+      <span class="map-tooltip__label tt-births">Births</span>
+      <span class="map-tooltip__val" id="tt-births"></span>
+    </div>
+    <div class="map-tooltip__row">
+      <span class="map-tooltip__label tt-deaths">Deaths</span>
+      <span class="map-tooltip__val" id="tt-deaths"></span>
+    </div>
+    <div class="map-tooltip__row">
+      <span class="map-tooltip__label tt-growth">Growth</span>
+      <span class="map-tooltip__val" id="tt-growth"></span>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/vizualization.js') }}"></script>
+{% endblock %}

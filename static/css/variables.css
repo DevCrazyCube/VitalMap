@@ -1,0 +1,100 @@
+/*
+ * VitalMap — CSS Custom Properties
+ * All design tokens live here. Import this before styling.css.
+ */
+
+:root {
+  /* ── Colour palette ── */
+  --color-bg:          #0d1117;
+  --color-surface:     #161b22;
+  --color-surface-2:   #21262d;
+  --color-border:      #30363d;
+  --color-border-soft: #21262d;
+
+  /* Text */
+  --color-text:        #e6edf3;
+  --color-text-muted:  #8b949e;
+  --color-text-faint:  #484f58;
+
+  /* Accent — births  (blue) */
+  --color-births:      #4fc3f7;
+  --color-births-dark: #0288d1;
+
+  /* Accent — deaths  (red) */
+  --color-deaths:      #ef5350;
+  --color-deaths-dark: #b71c1c;
+
+  /* Accent — growth  (green) */
+  --color-growth:      #66bb6a;
+  --color-growth-neg:  #ef5350;
+
+  /* Brand / primary CTA */
+  --color-primary:     #4fc3f7;
+  --color-primary-hov: #81d4fa;
+  --color-primary-dark:#0277bd;
+
+  /* Misc */
+  --color-white:       #ffffff;
+  --color-overlay:     rgba(13,17,23,0.80);
+
+  /* ── Typography ── */
+  --font-sans:   'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:   'Cascadia Code', 'Fira Mono', monospace;
+
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3rem;
+  --text-6xl:  4rem;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semi:   600;
+  --weight-bold:   700;
+
+  --leading-tight:  1.2;
+  --leading-normal: 1.5;
+  --leading-loose:  1.8;
+
+  /* ── Spacing ── */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* ── Layout ── */
+  --container-max:    1200px;
+  --container-narrow: 760px;
+  --navbar-h:         64px;
+  --sidebar-w:        290px;
+
+  /* ── Radius ── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.5);
+
+  /* ── Transitions ── */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-fast:   0.15s;
+  --t-base:   0.25s;
+  --t-slow:   0.45s;
+}

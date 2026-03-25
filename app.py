@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = "vitalmap-secret-key"
 
 DATA_FILE = "static/data/births-and-deaths-projected-to-2100.csv"
-SUBMISSIONS_FILE = "submissions.messages.json"
+SUBMISSIONS_FILE = "submissions/messages.json"
 
 
 
