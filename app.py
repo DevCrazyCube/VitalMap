@@ -2,17 +2,25 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 import csv
 import json
 import os
-from datetime import datetime
+import secrets
+from datetime import datetime, timezone
+from functools import lru_cache
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
-app.secret_key = "vitalmap-secret-key"
 
-DATA_FILE = "static/data/births-and-deaths-projected-to-2100.csv"
-SUBMISSIONS_FILE = "submissions/messages.json"
+# The key signs the session cookie that carries the flash messages. Set SECRET_KEY to keep
+# sessions across restarts; without it every start gets a fresh random key.
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+
+DATA_FILE = os.path.join(BASE_DIR, "static", "data", "births-and-deaths-projected-to-2100.csv")
+app.config["SUBMISSIONS_FILE"] = os.path.join(BASE_DIR, "submissions", "messages.json")
 
 
-
+@lru_cache(maxsize=1)
 def load_dataset():
+    """The dataset as a list of rows. Read once; the file does not change while the app runs."""
     rows = []
 
     with open(DATA_FILE, newline="", encoding="utf-8") as file:
@@ -23,7 +31,7 @@ def load_dataset():
             # create variables out of all rows
             entity = row["Entity"]
             code = row["Code"]
-            year = int(row ["Year"])
+            year = int(row["Year"])
 
             deaths_est = row["Deaths - Sex: all - Age: all - Variant: estimates"]
             deaths_med = row["Deaths - Sex: all - Age: all - Variant: medium"]
@@ -53,13 +61,13 @@ def load_dataset():
     return rows
 
 
-
 def save_contact_message(name, email, message):
-    os.makedirs("submissions", exist_ok=True)
+    submissions_file = app.config["SUBMISSIONS_FILE"]
+    os.makedirs(os.path.dirname(submissions_file), exist_ok=True)
 
     existing = []
-    if os.path.exists(SUBMISSIONS_FILE):
-        with open(SUBMISSIONS_FILE, "r", encoding="utf-8") as file:
+    if os.path.exists(submissions_file):
+        with open(submissions_file, "r", encoding="utf-8") as file:
             try:
                 existing = json.load(file)
             except json.JSONDecodeError:
@@ -69,12 +77,11 @@ def save_contact_message(name, email, message):
         "name": name,
         "email": email,
         "message": message,
-        "submitted_at": datetime.utcnow().isoformat()
+        "submitted_at": datetime.now(timezone.utc).isoformat()
     })
 
-    with open(SUBMISSIONS_FILE, "w", encoding="utf-8") as file:
+    with open(submissions_file, "w", encoding="utf-8") as file:
         json.dump(existing, file, indent=2)
-
 
 
 # / App routing / #
@@ -109,9 +116,9 @@ def contact():
 
 @app.route("/api/data")
 def api_data():
-    data = load_dataset()
-    return jsonify(data)
+    return jsonify(load_dataset())
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # The debugger lets anyone who can reach the page run code, so it is off unless asked for.
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1")

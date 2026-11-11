@@ -1344,6 +1344,13 @@ body.viz-body main {
 .trend-line-deaths { fill: none; stroke: var(--color-deaths); stroke-width: 2; }
 .trend-line-growth { fill: none; stroke: var(--color-growth); stroke-width: 1.5; stroke-dasharray: 4 3; }
 
+/* Zero, drawn only for a country whose growth goes below it. */
+.trend-zero-line {
+  stroke: var(--color-text-faint);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
 .trend-year-line {
   stroke: var(--color-primary);
   stroke-width: 1.5;
@@ -1455,6 +1462,7 @@ body.viz-body main {
 .details-row--births .details-row__value { color: var(--color-births); }
 .details-row--deaths .details-row__value { color: var(--color-deaths); }
 .details-row--growth .details-row__value { color: var(--color-growth); }
+.details-row--growth .details-row__value.is-shrinking { color: var(--color-deaths); }
 
 .details-panel__growth-indicator {
   margin-top: var(--space-3);
