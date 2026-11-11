@@ -79,6 +79,7 @@
   // ================================================================
   document.addEventListener("DOMContentLoaded", function () {
     setupControls();
+    var linkedCountry = readLink();
     setupTrendResizeHandle();
     Promise.all([fetchData(), fetchGeo()])
       .then(function (results) {
@@ -88,6 +89,11 @@
         drawMap();
         updateLegend();
         setupTrendResizeObserver();
+        if (linkedCountry && state.byCode[linkedCountry]) {
+          selectCountry(linkedCountry);
+        } else if (window.location.search) {
+          writeLink();             // tidy the address: drop what the page did not use
+        }
       })
       .catch(function (err) {
         console.error("VitalMap load error:", err);
@@ -98,6 +104,51 @@
         }
       });
   });
+
+  // ================================================================
+  // SHAREABLE LINKS
+  // ================================================================
+  // The page's state lives in the address: ?year=2023&metric=natural_growth&country=NLD
+  // A value the page does not know is ignored, so a broken link opens the default view.
+
+  /** Read year and metric from the address into the controls; return the country code, if any. */
+  function readLink() {
+    var params = new URLSearchParams(window.location.search);
+
+    var slider = document.getElementById("year-slider");
+    var year = parseInt(params.get("year"), 10);
+    if (slider && !isNaN(year) &&
+        year >= parseInt(slider.min, 10) && year <= parseInt(slider.max, 10)) {
+      state.year = year;
+      slider.value = year;
+      var yearDisplay = document.getElementById("year-display");
+      var yearBadge = document.getElementById("year-badge");
+      if (yearDisplay) yearDisplay.textContent = year;
+      if (yearBadge) yearBadge.textContent = year;
+    }
+
+    var metric = params.get("metric");
+    if (metric && Object.prototype.hasOwnProperty.call(METRIC_META, metric)) {
+      state.metric = metric;
+      var select = document.getElementById("metric-select");
+      var hint = document.getElementById("metric-hint");
+      if (select) select.value = metric;
+      if (hint) hint.textContent = METRIC_META[metric].hint;
+    }
+
+    var country = (params.get("country") || "").toUpperCase();
+    return /^[A-Z]{3}$/.test(country) ? country : null;
+  }
+
+  /** Put the current year, metric and country in the address, without a new history entry. */
+  function writeLink() {
+    if (!window.history || !window.history.replaceState) return;
+    var params = new URLSearchParams();
+    params.set("year", state.year);
+    params.set("metric", state.metric);
+    if (state.selectedCode) params.set("country", state.selectedCode);
+    window.history.replaceState(null, "", window.location.pathname + "?" + params.toString());
+  }
 
   // ================================================================
   // DATA
@@ -221,6 +272,7 @@
           updateDetails(state.selectedCode);
           updateYearMarker();
         }
+        writeLink();
       });
     }
 
@@ -233,6 +285,7 @@
 
         updateMap();
         updateLegend();
+        writeLink();
       });
     }
 
@@ -315,6 +368,7 @@
         d3.selectAll(".country-path").classed("selected", false);
         d3.selectAll(".country-label").classed("label-selected", false);
         state.selectedCode = null;
+        writeLink();
       });
     }
 
@@ -628,6 +682,7 @@
     updateLabelVisibility();
     updateDetails(code);
     drawTrendChart(code);
+    writeLink();
   }
 
   function panToCountry(code) {
@@ -685,6 +740,7 @@
       var indEl = document.getElementById("growth-indicator");
 
       grEl.textContent = (gr >= 0 ? "+" : "") + window.formatNum(gr);
+      grEl.classList.toggle("is-shrinking", gr < 0);
 
       if (gr >= 0) {
         indEl.textContent = "Growing naturally";
@@ -697,6 +753,7 @@
       document.getElementById("detail-births").textContent = "No data";
       document.getElementById("detail-deaths").textContent = "No data";
       document.getElementById("detail-growth").textContent = "No data";
+      document.getElementById("detail-growth").classList.remove("is-shrinking");
       document.getElementById("growth-indicator").textContent = "";
       document.getElementById("growth-indicator").className   = "details-panel__growth-indicator";
     }
@@ -749,9 +806,11 @@
       .domain([1950, 2100])
       .range([0, iW]);
 
-    var allVals = records.flatMap(function (r) { return [r.births, r.deaths]; });
+    // The axis runs below zero when deaths pass births, so a shrinking population shows as one.
+    var allVals   = records.flatMap(function (r) { return [r.births, r.deaths]; });
+    var minGrowth = d3.min(records, function (r) { return r.natural_growth; });
     var yScale  = d3.scaleLinear()
-      .domain([0, d3.max(allVals) * 1.08])
+      .domain([Math.min(0, minGrowth * 1.08), d3.max(allVals) * 1.08])
       .nice()
       .range([iH, 0]);
 
@@ -792,9 +851,16 @@
     );
 
     var lineGrowth = makeLine(
-      function (r) { return Math.max(0, r.natural_growth); },
+      function (r) { return r.natural_growth; },
       function (r) { return r.natural_growth != null; }
     );
+
+    if (minGrowth < 0) {
+      g.append("line")
+        .attr("class", "trend-zero-line")
+        .attr("x1", 0).attr("x2", iW)
+        .attr("y1", yScale(0)).attr("y2", yScale(0));
+    }
 
     g.append("path").datum(records).attr("class", "trend-line-births").attr("d", lineBirths);
     g.append("path").datum(records).attr("class", "trend-line-deaths").attr("d", lineDeaths);
